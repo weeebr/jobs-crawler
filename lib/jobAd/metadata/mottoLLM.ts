@@ -29,21 +29,7 @@ export async function extractMottoLLM(
 ): Promise<MottoExtractionResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.info("[extractMottoLLM] missing OPENAI_API_KEY, using fallback");
-    // Fall back to simple keyword-based extraction
-    const { extractMotto } = await import("./sizeAndMotto");
-    const simpleMotto = extractMotto(text);
-    return {
-      motto: simpleMotto || "-",
-      found: Boolean(simpleMotto),
-      reasoning: "No API key available, using keyword fallback",
-      origin: {
-        source: 'fallback',
-        sourceUrl: sourceUrl,
-        confidence: 'low',
-        extractedFrom: 'keyword-based extraction'
-      }
-    };
+    throw new Error("OpenAI API key is required for job analysis. Please configure your API key in the environment variables.");
   }
 
   try {

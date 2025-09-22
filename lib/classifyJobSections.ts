@@ -27,8 +27,7 @@ export async function classifyJobSections(
 ): Promise<SectionBuckets | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.info("[classifyJobSections] missing OPENAI_API_KEY, using heuristics");
-    return null;
+    throw new Error("OpenAI API key is required for job analysis. Please configure your API key in the environment variables.");
   }
 
   try {

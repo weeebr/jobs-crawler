@@ -24,11 +24,7 @@ export async function generateMotivationLetter(
 ): Promise<LetterResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.info("[generateMotivationLetter] missing OPENAI_API_KEY, using template");
-    return {
-      content: buildTemplateLetter(input),
-      source: "template",
-    };
+    throw new Error("OpenAI API key is required for job analysis. Please configure your API key in the environment variables.");
   }
 
   try {
