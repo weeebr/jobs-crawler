@@ -36,7 +36,7 @@ export async function rankMatchScore(
     return {
       source: "heuristic",
       matchScore: input.heuristics.matchScore,
-      reasoning: ["LLM scoring unavailable - no API key", "Using heuristic-based scoring as fallback"],
+      reasoning: "LLM scoring unavailable - no API key. Using heuristic-based scoring as fallback",
       gaps: input.heuristics.gaps,
       recommendations: input.heuristics.recommendations || []
     };
