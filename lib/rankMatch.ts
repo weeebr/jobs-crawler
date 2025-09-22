@@ -33,8 +33,7 @@ export async function rankMatchScore(
 ): Promise<MatchRanking> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.info("[rankMatchScore] missing OPENAI_API_KEY, using heuristics");
-    return fallbackRanking(input.heuristics);
+    throw new Error("OpenAI API key is required for job analysis. Please configure your API key in the environment variables.");
   }
 
   try {
