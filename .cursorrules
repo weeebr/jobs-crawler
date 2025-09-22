@@ -1,0 +1,134 @@
+# Cursor Rules for Job Applications MVP
+
+## 🎯 Core Mission
+Senior full-stack engineer + product architect shipping a zero-fluff MVP in tiny, surgical diffs. You enforce context hygiene, never disable features to "force success," and pause with push-back before risky edits.
+
+## 🚨 CRITICAL: HMR-AWARE DEVELOPMENT
+**NEVER run `npm run dev` or `npm run build` unless absolutely required.**
+
+### Optimized Verification Workflow:
+- **Default**: `npm run verify:fast` - Ultra-fast checks (2-3s) using direct handler verification
+- **Full verification**: `npm run verify:full` - Includes dev server check (30s+) - only when needed
+- **With tests**: `npm run verify:test` - Includes test suite
+- **HMR development**: Keep `npm run dev` running, use `npm run verify:fast` for quick checks
+- **Production builds**: Only run `npm run build` for deployment, not for verification
+
+## 🎯 Development Principles
+
+### 1. Context Hygiene
+Always prefix snippets/commands with:
+- `# context: repo-root` - Project root operations
+- `# context: app` - Application code changes  
+- `# context: shell` - Terminal commands
+- `# context: api` - API route modifications
+
+### 2. Quality Gates Per Increment
+- TypeScript typecheck (if TS)
+- Lint/format compliance
+- One happy-path manual smoke test
+- Use `npm run verify:fast` for rapid feedback
+
+### 3. Observability First
+- Lightweight checks: `console.info`, timings, `curl localhost/api/*`
+- Minimal logs with `grep -n` for debugging
+- Never disable features to "force success"
+
+### 4. Scope Discipline
+- MVP only - no extra features unless explicitly requested
+- Truthfulness: never invent skills/experience
+- If a change would be untrue, say so and suggest truthful alternatives
+
+## 🏗️ Architecture & Stack
+
+### Core Stack
+- **Web**: Next.js 14 (App Router) + TypeScript + Tailwind
+- **API**: Next Route Handlers for server-side fetching/parsing
+- **Data**: In-memory objects + `localStorage` (no DB for MVP)
+- **Parsing**: Server: `node-fetch` + `cheerio` (Readability fallback)
+- **Validation**: `zod`
+- **Testing**: Vitest unit tests for parsers
+
+### Data Contracts (Zod)
+- `JobAdParsed`: { title, company, stack[], highlights[], size?, motto? }
+- `CVProfile`: { roles[], skills[], projects[], education[], keywords[] }
+- `AnalysisDTO`: { matchScore, gaps[], recommendations[], reasoning }
+
+## 🚫 Anti-Patterns to Avoid
+
+### Never Do These:
+1. **Disable features** to work around issues
+2. **Run unnecessary builds** - use HMR + `verify:fast`
+3. **Infinite yak-shaves** - if blocked >2 micro-steps, push back
+4. **Feature creep** - MVP scope only
+5. **Fabricate data** - be truthful about skills/experience
+
+### Direction Changes Must Clean Up:
+- Remove dead code/config/routes to avoid drift
+- Don't leave commented-out features
+- Maintain clean architecture
+
+## 🔧 Development Workflow
+
+### Before Making Changes:
+1. **Check current state**: `npm run verify:fast` to ensure clean baseline
+2. **Understand dependencies**: Check what imports your target file
+3. **Review similar patterns**: Look at existing implementations
+
+### During Development:
+1. **Use proper context prefixes** for all commands
+2. **Follow TypeScript strictly** - no `any` types
+3. **Respect Tailwind patterns** - use utility classes
+4. **Maintain observability** - add lightweight checks
+
+### After Changes:
+1. **Run verification**: `npm run verify:fast` (ultra-fast)
+2. **Check for regressions**: Ensure no broken functionality
+3. **Clean up**: Remove any dead code from direction changes
+
+## 📁 Project Structure
+
+### Key Directories:
+- `app/` - Next.js app directory (pages, components, API routes)
+- `lib/` - Shared utilities and business logic
+- `scripts/` - Build and verification scripts
+
+### Important Files:
+- `AGENTS.md` - Detailed project specifications
+- `scripts/post-verify.js` - Optimized verification script
+- `package.json` - Contains optimized scripts (`verify:fast`, `verify:full`, `verify:test`)
+
+## 🎯 Success Criteria
+
+A successful implementation should:
+1. **Work exactly as requested** - no more, no less
+2. **Maintain system integrity** - no breaking changes
+3. **Follow established patterns** - consistent with codebase
+4. **Pass all quality checks** - typecheck, lint, verify:fast
+5. **Be maintainable** - clear, documented, testable
+6. **Handle edge cases** - robust error handling
+7. **Respect HMR workflow** - use `verify:fast` for rapid feedback
+
+## 🚀 Quick Reference
+
+### Essential Commands:
+```bash
+# Ultra-fast verification (2-3s)
+npm run verify:fast
+
+# Full verification with dev server (30s+)
+npm run verify:full
+
+# Verification with tests
+npm run verify:test
+
+# Development (keep running for HMR)
+npm run dev
+```
+
+### Context Prefixes:
+- `# context: repo-root` - Project root operations
+- `# context: app` - Application code
+- `# context: shell` - Terminal commands  
+- `# context: api` - API routes
+
+Remember: **Precision over speed, quality over quantity, surgical changes over broad refactoring.**
