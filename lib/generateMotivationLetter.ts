@@ -1,5 +1,4 @@
-import type { CVProfile, JobAdParsed } from "./schemas";
-import type { ComparisonResult } from "./compareCv";
+import type { CVProfile, JobAdParsed, ComparisonResult } from "./schemas";
 
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
 const OPENAI_MODEL =
