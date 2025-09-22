@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import type { CVProfile, JobAdParsed } from "./schemas";
-import type { ComparisonResult } from "./compareCv";
+import type { CVProfile, JobAdParsed, ComparisonResult, MatchRanking } from "./schemas";
+import { matchRankingSchema } from "./schemas";
 import { roundMatchScore } from "./matchScore";
 
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
@@ -16,11 +16,6 @@ const responseSchema = z.object({
   reasoning: z.string().min(1),
 });
 
-export interface MatchRanking {
-  matchScore: number;
-  reasoning: string;
-  source: "llm" | "heuristic";
-}
 
 interface RankMatchInput {
   job: JobAdParsed;
@@ -87,11 +82,12 @@ export async function rankMatchScore(
 
     console.info(`[rankMatchScore] llm score=${rounded}`);
 
-    return {
+    const result_data = {
       matchScore: rounded,
       reasoning: result.data.reasoning.trim(),
-      source: "llm",
+      source: "llm" as const,
     };
+    return matchRankingSchema.parse(result_data);
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       console.warn(`[rankMatchScore] OpenAI timeout after ${OPENAI_TIMEOUT_MS}ms`);
@@ -104,7 +100,12 @@ export async function rankMatchScore(
 
 function fallbackRanking(heuristics: ComparisonResult): MatchRanking {
   console.info(`[rankMatchScore] fallback score=${heuristics.matchScore}`);
-  return { matchScore: heuristics.matchScore, reasoning: "LLM scoring unavailable; using heuristic stack overlap and keyword coverage.", source: "heuristic" };
+  const result = { 
+    matchScore: heuristics.matchScore, 
+    reasoning: "LLM scoring unavailable; using heuristic stack overlap and keyword coverage.", 
+    source: "heuristic" as const 
+  };
+  return matchRankingSchema.parse(result);
 }
 
 function buildRequestPayload({ job, cv, heuristics }: RankMatchInput) {

@@ -1,11 +1,6 @@
-import type { CVProfile, JobAdParsed } from "./schemas";
+import type { CVProfile, JobAdParsed, ComparisonResult } from "./schemas";
+import { comparisonResultSchema } from "./schemas";
 import { roundMatchScore } from "./matchScore";
-
-export interface ComparisonResult {
-  matchScore: number;
-  gaps: string[];
-  reasoning: string[];
-}
 
 const EXPERIENCE_WEIGHT = 15;
 const STACK_WEIGHT = 50;
@@ -63,11 +58,14 @@ export function compareCv(job: JobAdParsed, cv: CVProfile): ComparisonResult {
     `[compareCv] calculated score=${matchScore} overlap=${intersection}/${jobStackSet.size}`,
   );
 
-  return {
+  const result = {
     matchScore,
     gaps,
     reasoning,
   };
+  
+  // Validate the result with Zod schema
+  return comparisonResultSchema.parse(result);
 }
 
 function calculateCoverageScore(

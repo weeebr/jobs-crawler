@@ -1,4 +1,6 @@
 import fetch from "node-fetch";
+import { withRetry, withTimeout } from "./retryUtils";
+import { extractErrorMessage } from "./apiUtils";
 
 export interface FetchJobAdOptions {
   timeoutMs?: number;
@@ -51,38 +53,24 @@ export async function fetchJobAd(
   const retries = options.retryCount ?? DEFAULT_RETRY_COUNT;
   const clearJobAdData = options.clearJobAdData ?? false;
 
-  let attempt = 0;
-  let lastError: unknown;
-
-  while (attempt <= retries) {
-    try {
-      console.info(`[fetchJobAd] fetching ${url} attempt ${attempt + 1}${clearJobAdData ? ' (clearing job ad data)' : ''}`);
+  return withRetry(
+    async () => {
+      console.info(`[fetchJobAd] fetching ${url}${clearJobAdData ? ' (clearing job ad data)' : ''}`);
       return await fetchWithTimeout(url, timeoutMs);
-    } catch (error) {
-      lastError = error;
-      attempt += 1;
-      
-      // Log more detailed error information
-      const errorType = error instanceof Error ? error.constructor.name : 'Unknown';
-      const isTimeout = error instanceof Error && (error.message.includes('aborted') || error.name === 'AbortError');
-      console.warn(`[fetchJobAd] attempt ${attempt} failed (${errorType}${isTimeout ? ' - timeout' : ''})`, {
-        url,
-        attempt,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      
-      if (attempt > retries) {
-        break;
+    },
+    {
+      maxRetries: retries,
+      baseDelayMs: 500,
+      maxDelayMs: 2000,
+      onRetry: (attempt, error) => {
+        const errorType = error instanceof Error ? error.constructor.name : 'Unknown';
+        const isTimeout = error instanceof Error && (error.message.includes('aborted') || error.name === 'AbortError');
+        console.warn(`[fetchJobAd] attempt ${attempt} failed (${errorType}${isTimeout ? ' - timeout' : ''})`, {
+          url,
+          attempt,
+          error: extractErrorMessage(error)
+        });
       }
-      
-      // Exponential backoff: 500ms, 1s, 2s
-      const backoffMs = Math.min(500 * Math.pow(2, attempt - 1), 2000);
-      console.info(`[fetchJobAd] retrying in ${backoffMs}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Unknown error fetching job ad");
+  );
 }

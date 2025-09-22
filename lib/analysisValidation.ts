@@ -12,7 +12,7 @@ export function isAnalysisComplete(record: AnalysisRecord): boolean {
   const { llmAnalysis } = record;
   
   // Must have match score
-  if (typeof llmAnalysis.matchScore !== 'number' || llmAnalysis.matchScore < 0 || llmAnalysis.matchScore > 100) {
+  if (typeof llmAnalysis.matchScore !== 'number' || isNaN(llmAnalysis.matchScore) || llmAnalysis.matchScore < 0 || llmAnalysis.matchScore > 100) {
     return false;
   }
   

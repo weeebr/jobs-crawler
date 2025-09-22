@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { extractErrorMessage } from "../../apiUtils";
 
 const OPENAI_BASE_URL = "https://api.openai.com/v1";
 
@@ -131,7 +132,7 @@ export async function extractMottoLLM(
     return {
       motto: "-",
       found: false,
-      reasoning: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      reasoning: `Error: ${extractErrorMessage(error)}`,
       origin: {
         source: 'api_error',
         sourceUrl: sourceUrl,

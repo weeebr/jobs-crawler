@@ -1,17 +1,26 @@
 import { z } from "zod";
 
-// Raw fetched job data from external sources
-export const jobAdFetchedSchema = z.object({
+// Base job data schema - shared between full job data and summaries
+const baseJobDataSchema = z.object({
   title: z.string().min(1, "Job title required"),
   company: z.string().min(1, "Company name required"),
-  companyUrl: z.string().url().optional(), // Direct link to the company website
   stack: z.array(z.string()).default([]),
+  publishedAt: z.string().optional(),
+  location: z.string().optional(),
+  workload: z.string().optional(),
+  duration: z.string().optional(),
+  size: z.enum(["5", "10", "20", "50", "100", "200", "500"]).optional(),
+  teamSize: z.string().optional(),
+});
+
+// Raw fetched job data from external sources
+export const jobAdFetchedSchema = baseJobDataSchema.extend({
+  companyUrl: z.string().url().optional(), // Direct link to the company website
   qualifications: z.array(z.string()).default([]),
   roles: z.array(z.string()).default([]),
   benefits: z.array(z.string()).default([]),
   sourceUrl: z.string().url().optional(),
   jobUrl: z.string().url().optional(), // Direct link to the job posting
-  size: z.enum(["5", "10", "20", "50", "100", "200", "500"]).optional(),
   motto: z.string().optional(),
   mottoOrigin: z.object({
     source: z.enum(['job_ad', 'company_page', 'fallback', 'api_error']),
@@ -19,12 +28,7 @@ export const jobAdFetchedSchema = z.object({
     confidence: z.enum(['high', 'medium', 'low']),
     extractedFrom: z.string().optional(),
   }).optional(),
-  publishedAt: z.string().optional(),
-  location: z.string().optional(),
-  workload: z.string().optional(),
-  duration: z.string().optional(),
   language: z.string().optional(),
-  teamSize: z.string().optional(),
   // Metadata about the fetch
   fetchedAt: z.number().int().min(0),
   sourceDomain: z.string().optional(),
@@ -62,6 +66,24 @@ export const cvProfileSchema = z.object({
 });
 
 export type CVProfile = z.infer<typeof cvProfileSchema>;
+
+// CV Comparison result schema
+export const comparisonResultSchema = z.object({
+  matchScore: z.number().min(0).max(100),
+  gaps: z.array(z.string()).default([]),
+  reasoning: z.array(z.string()).default([]),
+});
+
+export type ComparisonResult = z.infer<typeof comparisonResultSchema>;
+
+// Match ranking schema for LLM results
+export const matchRankingSchema = z.object({
+  matchScore: z.number().min(0).max(100),
+  reasoning: z.string().min(1, "Reasoning required"),
+  source: z.enum(["llm", "heuristic"]),
+});
+
+export type MatchRanking = z.infer<typeof matchRankingSchema>;
 
 const motivationLetterSchema = z.object({
   content: z.string().min(1, "Letter content required"),
@@ -154,17 +176,8 @@ export const backgroundTaskSchema = z.object({
 export type BackgroundTask = z.infer<typeof backgroundTaskSchema>;
 
 // Client storage schemas
-export const recentAnalysisSummarySchema = z.object({
+export const recentAnalysisSummarySchema = baseJobDataSchema.extend({
   id: z.number().int().min(0),
-  // Fetched data
-  title: z.string().min(1),
-  company: z.string().min(1),
-  publishedAt: z.string().optional(),
-  location: z.string().optional(),
-  workload: z.string().optional(),
-  duration: z.string().optional(),
-  size: z.string().optional(),
-  stack: z.array(z.string()).default([]),
   // Enriched data
   matchScore: z.number().min(0).max(100),
   status: z.enum(['interested', 'applied']).optional(),
@@ -206,6 +219,14 @@ export const taskResponseSchema = z.object({
 
 export type TaskResponse = z.infer<typeof taskResponseSchema>;
 
+// API Error response schema for consistent error handling
+export const apiErrorResponseSchema = z.object({
+  error: z.string().min(1, "Error message required"),
+  details: z.any().optional(),
+});
+
+export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
+
 // Streaming message schemas
 export const streamMessageSchema = z.object({
   type: z.string().min(1),
@@ -213,6 +234,14 @@ export const streamMessageSchema = z.object({
 });
 
 export type StreamMessage = z.infer<typeof streamMessageSchema>;
+
+// Stream message content schema for validation
+export const streamMessageContentSchema = z.object({
+  type: z.enum(['progress', 'result', 'error', 'complete']),
+  data: z.any(),
+});
+
+export type StreamMessageContent = z.infer<typeof streamMessageContentSchema>;
 
 export const linkCollectionProgressSchema = z.object({
   total: z.number().int().min(0),

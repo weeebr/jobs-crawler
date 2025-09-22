@@ -1,5 +1,5 @@
 import { load } from "cheerio";
-import { filterEmptyValue } from "./filterUtils";
+import { filterEmptyValue, filterDurationValue } from "./filterUtils";
 
 /**
  * Enhanced metadata extraction that leverages structured HTML data
@@ -39,11 +39,14 @@ export function extractStructuredMetadata(
   const contractElement = $('[data-cy="info-contract"]');
   if (contractElement.length) {
     const contractText = contractElement.find('span:contains("Contract type:")').next().text().trim();
-    const filtered = filterEmptyValue(contractText);
+    const filtered = filterDurationValue(contractText);
     if (filtered) {
       // Transform employment type to remove common suffixes
       const transformed = transformEmploymentType(filtered);
-      metadata.duration = transformed;
+      const finalFiltered = filterDurationValue(transformed);
+      if (finalFiltered) {
+        metadata.duration = finalFiltered;
+      }
     }
   }
 
@@ -127,7 +130,7 @@ function extractEmploymentType(text: string): string | undefined {
   const employmentMatch = text.match(/\b(unlimited|permanent|temporary|fixed-term|part-time|full-time)(?:\s+employment)?\b/i);
   if (employmentMatch && employmentMatch[1]) {
     const employmentType = employmentMatch[1].trim();
-    const filtered = filterEmptyValue(employmentType);
+    const filtered = filterDurationValue(employmentType);
     if (filtered) {
       return filtered;
     }
@@ -137,11 +140,12 @@ function extractEmploymentType(text: string): string | undefined {
   const contractMatch = text.match(/contract type[:\s-]*([^.\n]+)/i);
   if (contractMatch && contractMatch[1]) {
     const contractType = contractMatch[1].trim();
-    const filtered = filterEmptyValue(contractType);
+    const filtered = filterDurationValue(contractType);
     if (filtered) {
       // Transform common employment types
       const transformed = transformEmploymentType(filtered);
-      return transformed;
+      const finalFiltered = filterDurationValue(transformed);
+      return finalFiltered;
     }
   }
   
@@ -186,7 +190,13 @@ export function extractSemanticMetadata(
   metadata.workload = extractByPatterns(text, workloadPatterns);
 
   // Extract employment type with proper transformation
-  metadata.duration = extractEmploymentType(text);
+  const employmentType = extractEmploymentType(text);
+  if (employmentType) {
+    const filtered = filterDurationValue(employmentType);
+    if (filtered) {
+      metadata.duration = filtered;
+    }
+  }
 
   // Language patterns
   const languagePatterns = [
@@ -211,15 +221,27 @@ export function extractSemanticMetadata(
     /(\d+)\s*(?:people|members|developers|engineers|team members)/i,
     /team of (\d+)/i,
     /(?:team|gruppe)\s*(?:von|of)\s*(\d+)/i,
-    // German patterns for small/agile teams (without numbers)
-    /(klein\w*,\s*agil\w*\s*team)/i,
-    /(agil\w*,\s*klein\w*\s*team)/i,
-    /(kleinen,\s*agilen\s*team)/i,
-    /(agilen,\s*kleinen\s*team)/i,
+    // German patterns for small/agile teams (extract just the key word)
+    /klein\w*,\s*agil\w*\s*team/i,
+    /agil\w*,\s*klein\w*\s*team/i,
+    /kleinen,\s*agilen\s*team/i,
+    /agilen,\s*kleinen\s*team/i,
     /(?:klein|small|wenig)\w*\s*(?:agil|agile)\w*\s*team/i,
     /(?:agil|agile)\w*\s*(?:klein|small|wenig)\w*\s*team/i,
   ];
-  metadata.teamSize = extractByPatterns(text, teamSizePatterns);
+  
+  // Extract team size and normalize to single word
+  const extractedTeamSize = extractByPatterns(text, teamSizePatterns);
+  if (extractedTeamSize) {
+    // Normalize to single word - extract the most important descriptor
+    if (extractedTeamSize.toLowerCase().includes('klein') || extractedTeamSize.toLowerCase().includes('small')) {
+      metadata.teamSize = 'klein';
+    } else if (extractedTeamSize.toLowerCase().includes('agil') || extractedTeamSize.toLowerCase().includes('agile')) {
+      metadata.teamSize = 'agil';
+    } else {
+      metadata.teamSize = extractedTeamSize;
+    }
+  }
 
   return metadata;
 }

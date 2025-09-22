@@ -38,6 +38,16 @@ export function getTechCategory(tech: string): string {
     return 'tools';
   }
   
+  // Testing frameworks
+  if (['jest', 'mocha', 'chai', 'cypress', 'playwright', 'selenium', 'puppeteer', 'vitest', 'testing library', 'enzyme', 'karma', 'jasmine', 'ava', 'tape'].includes(lowerTech)) {
+    return 'tools';
+  }
+  
+  // CI/CD and DevOps tools
+  if (['ci/cd', 'cicd', 'jenkins', 'github actions', 'gitlab ci', 'circleci', 'travis ci', 'azure devops', 'bamboo', 'teamcity', 'drone', 'concourse'].includes(lowerTech)) {
+    return 'devops';
+  }
+  
   // Default to general tech
   return 'tech';
 }
@@ -62,4 +72,33 @@ export function getTechBadgeStyle(tech: string): React.CSSProperties {
 export function getTechBadgeClass(tech: string): string {
   const category = getTechCategory(tech);
   return `badge badge-tech-${category}`;
+}
+
+// Color-based ordering for tech stack pills
+const COLOR_ORDER = {
+  frontend: 1,    // Blue
+  backend: 2,     // Green  
+  database: 3,    // Orange
+  devops: 4,      // Red
+  mobile: 5,      // Purple
+  cloud: 6,       // Cyan
+  tools: 7,       // Gray
+  tech: 8         // Default blue
+};
+
+export function sortTechStackByColor(techStack: string[]): string[] {
+  return [...techStack].sort((a, b) => {
+    const categoryA = getTechCategory(a);
+    const categoryB = getTechCategory(b);
+    
+    const orderA = COLOR_ORDER[categoryA as keyof typeof COLOR_ORDER] || COLOR_ORDER.tech;
+    const orderB = COLOR_ORDER[categoryB as keyof typeof COLOR_ORDER] || COLOR_ORDER.tech;
+    
+    // If same category, sort alphabetically
+    if (orderA === orderB) {
+      return a.localeCompare(b);
+    }
+    
+    return orderA - orderB;
+  });
 }

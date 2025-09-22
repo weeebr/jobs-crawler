@@ -91,3 +91,76 @@ export function filterDisplayValue(value: string | undefined): string | undefine
   
   return filtered;
 }
+
+/**
+ * Enhanced filter specifically for duration/employment type values
+ * This ensures only valid employment types are displayed
+ */
+export function filterDurationValue(value: string | undefined): string | undefined {
+  const filtered = filterEmptyValue(value);
+  
+  if (!filtered) {
+    return undefined;
+  }
+  
+  // Check for valid employment types
+  const validEmploymentTypes = [
+    'unlimited', 'permanent', 'temporary', 'fixed-term', 'part-time', 'full-time',
+    'contract', 'assignment', 'freelance', 'internship', 'consulting'
+  ];
+  
+  const lowerValue = filtered.toLowerCase();
+  
+  // Check if it's a valid employment type
+  const isValidType = validEmploymentTypes.some(type => 
+    lowerValue.includes(type) || type.includes(lowerValue)
+  );
+  
+  if (!isValidType) {
+    // Check for partial matches that might be acceptable
+    const hasValidKeywords = validEmploymentTypes.some(type => 
+      lowerValue.includes(type.substring(0, 4)) // Allow partial matches for longer terms
+    );
+    
+    if (!hasValidKeywords) {
+      return undefined;
+    }
+  }
+  
+  // Check for values that are too long (likely parsing errors)
+  if (filtered.length > 50) {
+    return undefined;
+  }
+  
+  // Check for values that contain multiple employment types (likely parsing errors)
+  const employmentTypeCount = validEmploymentTypes.filter(type => 
+    lowerValue.includes(type)
+  ).length;
+  
+  if (employmentTypeCount > 2) {
+    return undefined;
+  }
+  
+  return filtered;
+}
+
+/**
+ * Format team size for display with "+" suffix
+ * This is used for visual presentation in dashboard and job detail pages
+ */
+export function formatTeamSizeForDisplay(teamSize: string | undefined): string | undefined {
+  if (!teamSize) return undefined;
+  
+  // If it's already a numeric value, add "+"
+  if (/^\d+$/.test(teamSize)) {
+    return `${teamSize}+`;
+  }
+  
+  // If it's already formatted with "+", return as is
+  if (teamSize.endsWith('+')) {
+    return teamSize;
+  }
+  
+  // For non-numeric values (like "klein", "agil"), return as is
+  return teamSize;
+}

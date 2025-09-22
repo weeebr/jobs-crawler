@@ -55,6 +55,7 @@ export function toSummary(record: AnalysisRecord): RecentAnalysisSummary {
     workload: record.job.workload,
     duration: record.job.duration,
     size: record.job.size,
+    teamSize: record.job.teamSize,
     stack: record.job.stack,
     // Enriched data (from LLM analysis + user interactions)
     matchScore: record.llmAnalysis.matchScore,

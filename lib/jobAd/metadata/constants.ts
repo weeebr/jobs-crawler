@@ -19,8 +19,8 @@ type DurationPattern = {
 
 export const DURATION_PATTERNS: DurationPattern[] = [
   {
-    test: /\b(unlimited|permanent)(?: employment| contract)?\b/i,
-    value: (match) => match[1].trim(), // Return only the employment type, not the full match
+    test: /\b(unlimited|permanent)(?:\s+(?:employment|contract))?\b/i,
+    value: (match) => match[1].trim(),
   },
   {
     test: /(contract|assignment)\s+for\s+(\d+\s*(?:months?|years?))/i,
@@ -31,12 +31,17 @@ export const DURATION_PATTERNS: DurationPattern[] = [
     value: (match) => match[0].trim(),
   },
   {
-    test: /\b(temporary|fixed[- ]term)(?: position| contract)?\b/i,
-    value: (match) => match[1].trim(), // Return only the employment type, not the full match
+    test: /\b(temporary|fixed[- ]term)(?:\s+(?:position|contract))?\b/i,
+    value: (match) => match[1].trim(),
   },
   {
-    test: /\b(part-time|full-time)(?: employment| position)?\b/i,
-    value: (match) => match[1].trim(), // Return only the employment type, not the full match
+    test: /\b(part-time|full-time)(?:\s+(?:employment|position))?\b/i,
+    value: (match) => match[1].trim(),
+  },
+  // Add more specific patterns for common edge cases
+  {
+    test: /\b(unlimited|permanent|temporary|fixed-term|part-time|full-time)\b/i,
+    value: (match) => match[1].trim(),
   },
 ];
 
@@ -58,3 +63,4 @@ export const KNOWN_METADATA_LABELS = [
   "department",
   "team",
 ];
+

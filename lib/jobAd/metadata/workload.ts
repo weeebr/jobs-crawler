@@ -8,7 +8,7 @@ import {
   WORKLOAD_REGEX,
 } from "./constants";
 import { extractEnhancedMetadata } from "./structuredExtractor";
-import { filterEmptyValue } from "./filterUtils";
+import { filterEmptyValue, filterDurationValue } from "./filterUtils";
 
 export function extractWorkload(
   $: ReturnType<typeof load>,
@@ -20,46 +20,22 @@ export function extractWorkload(
     return structured.workload;
   }
 
-  // Fallback to original logic
-  const labelledElement =
-    $("[data-field='workload'], [data-testid='workload'], .job-workload")
-      .first()
-      .text()
-      .trim();
+  // Simplified fallback: try DOM selectors, then regex
+  const labelledElement = $("[data-field='workload'], [data-testid='workload'], .job-workload")
+    .first()
+    .text()
+    .trim();
+  
   if (labelledElement) {
-    const trimmed = trimAtKnownLabel(labelledElement);
-    const filtered = filterEmptyValue(trimmed);
-    if (filtered) {
-      return filtered;
-    }
+    const filtered = filterEmptyValue(trimAtKnownLabel(labelledElement));
+    if (filtered) return filtered;
   }
 
-  const labelled = extractLineByLabel(text, ["workload", "pensum", "employment rate"]);
-  const filteredLabelled = filterEmptyValue(labelled || undefined);
-  if (filteredLabelled) return filteredLabelled;
-
-  const match = text.match(WORKLOAD_REGEX);
+  // Try regex patterns as final fallback
+  const match = text.match(WORKLOAD_REGEX) || text.match(PERCENT_REGEX);
   if (match && match[1]) {
-    const trimmed = trimAtKnownLabel(match[1]);
-    const filtered = filterEmptyValue(trimmed);
-    if (filtered) {
-      return filtered;
-    }
-  }
-
-  const percentMatch = text.match(PERCENT_REGEX);
-  if (percentMatch && percentMatch[1]) {
-    const context = text.slice(
-      Math.max(0, text.indexOf(percentMatch[1]) - 50),
-      text.indexOf(percentMatch[1]) + 50,
-    );
-    if (/workload|pensum|employment/i.test(context)) {
-      const trimmed = percentMatch[1].trim();
-      const filtered = filterEmptyValue(trimmed);
-      if (filtered) {
-        return filtered;
-      }
-    }
+    const filtered = filterEmptyValue(trimAtKnownLabel(match[1]));
+    if (filtered) return filtered;
   }
 
   return undefined;
@@ -72,15 +48,18 @@ export function extractDuration(
   // Try structured extraction first
   const structured = extractEnhancedMetadata($, $.html(), text);
   if (structured.duration) {
-    return structured.duration;
+    const filtered = filterDurationValue(structured.duration);
+    if (filtered) {
+      return filtered;
+    }
   }
 
-  // Fallback to original logic
+  // Fallback to original logic with enhanced filtering
   for (const pattern of CONTRACT_PATTERNS) {
     const match = text.match(pattern);
     if (match && match[1]) {
       const value = trimAtKnownLabel(match[1]);
-      const filtered = filterEmptyValue(value);
+      const filtered = filterDurationValue(value);
       if (filtered) {
         return filtered;
       }
@@ -91,7 +70,7 @@ export function extractDuration(
     const match = text.match(pattern.test);
     if (match) {
       const value = trimAtKnownLabel(pattern.value(match));
-      const filtered = filterEmptyValue(value);
+      const filtered = filterDurationValue(value);
       if (filtered) {
         return filtered;
       }
@@ -99,7 +78,7 @@ export function extractDuration(
   }
 
   const line = extractLineByLabel(text, ["duration", "contract type", "employment type"]);
-  const filteredLine = filterEmptyValue(line || undefined);
+  const filteredLine = filterDurationValue(line || undefined);
   if (filteredLine) {
     return filteredLine;
   }

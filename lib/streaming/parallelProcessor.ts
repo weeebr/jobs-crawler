@@ -1,5 +1,6 @@
 import { analyzeSingleJob } from "./jobAnalysis";
 import { addTaskResult, addTaskError, getBackgroundTask, isTaskCancelled, getTaskAbortController } from "@/lib/backgroundTasks";
+import { extractErrorMessage } from "@/lib/apiUtils";
 import { getExistingJobUrls } from "@/lib/clientStorage/core";
 import type { CVProfile } from "@/lib/schemas";
 import type { AnalysisRecord } from "@/lib/types";
@@ -73,7 +74,7 @@ export async function processJobLinksInParallel(
 
         return { success: true, record, index: globalIndex };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown analysis failure";
+        const message = extractErrorMessage(error);
         console.warn(`[api/analyze/stream] failed for ${link}`, error);
         
         // Update background task with error
