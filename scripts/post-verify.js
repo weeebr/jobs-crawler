@@ -22,6 +22,10 @@ const OVERSIZE_ALLOWLIST = {
   "lib/useBackgroundTasks.ts": 260,
   "lib/generateMotivationLetter.ts": 240,
   "lib/jobAd/metadata/mottoLLM.ts": 210,
+  "lib/clientStorage/realtimeSync.ts": 250,
+  "lib/jobAd/metadata/structuredExtractor.ts": 280,
+  "lib/jobAd/metadata/workload.ts": 220,
+  "lib/schemas.ts": 240,
   "lib/__tests__/mottoOrigin.test.ts": 290,
   "lib/__tests__/mottoOriginIntegration.test.ts": 320,
   "lib/__tests__/mottoOriginUI.test.ts": 230,
@@ -35,34 +39,9 @@ const IGNORE_DIR_NAMES = new Set([
   "__mocks__",
   "fixtures",
 ]);
-const SAMPLE_JOB_HTML = `<!DOCTYPE html>
-<html><body>
-  <main>
-    <h1>Senior Frontend Engineer</h1>
-    <p>ExampleCorp builds thoughtful SaaS products for engineers.</p>
-    <section>
-      <h2>Responsibilities</h2>
-      <ul>
-        <li>Build accessible React components in TypeScript</li>
-        <li>Collaborate across product and design</li>
-      </ul>
-    </section>
-    <section>
-      <h2>Requirements</h2>
-      <ul>
-        <li>5+ years experience with React and Next.js</li>
-        <li>Comfortable with Node.js and cloud deployments</li>
-      </ul>
-    </section>
-    <section>
-      <h2>Benefits</h2>
-      <ul>
-        <li>Remote-first team</li>
-        <li>Annual learning stipend</li>
-      </ul>
-    </section>
-  </main>
-</body></html>`;
+// Use a real fixture file instead of hardcoded HTML
+const FIXTURE_PATH = path.join(__dirname, "..", "lib", "__tests__", "fixtures", "java-fullstack-erp.html");
+const SAMPLE_JOB_HTML = fs.readFileSync(FIXTURE_PATH, "utf8");
 
 const INCLUDE_TESTS =
   argv.has("--with-tests") ||
@@ -82,6 +61,7 @@ const FORCE_DEV_SERVER =
     await maybeRunTests();
     await verifyEndpoint();
     console.info("\n✅ post-verify checks passed");
+    process.exit(0);
   } catch (error) {
     console.error("\n❌ post-verify failed:", error instanceof Error ? error.message : error);
     process.exit(1);

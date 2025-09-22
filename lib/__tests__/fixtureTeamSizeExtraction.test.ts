@@ -7,6 +7,10 @@ import { parseJobAd } from "../parseJobAd";
 describe("Team Size Extraction from Fixtures", () => {
   const fixturesDir = join(__dirname, "fixtures");
 
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test-key-for-testing-only";
+  });
+
   it("should extract team size from java-fullstack-erp.html", async () => {
     const fixturePath = join(fixturesDir, "java-fullstack-erp.html");
     const html = readFileSync(fixturePath, "utf-8");

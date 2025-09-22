@@ -29,7 +29,8 @@ export async function extractMottoLLM(
 ): Promise<MottoExtractionResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("OpenAI API key is required for job analysis. Please configure your API key in the environment variables.");
+    // Fallback to keyword-based extraction when no API key is available
+    return extractMottoFallback(text, company, sourceUrl);
   }
 
   try {
@@ -108,14 +109,12 @@ export async function extractMottoLLM(
         }
       };
     }
-
     // Return the motto if result is true, otherwise return "-"
     const finalMotto = result.data.result ? result.data.motto : "-";
     
     console.info(
       `[extractMottoLLM] extracted motto result=${result.data.result} motto="${finalMotto || 'none'}"`,
     );
-
     return {
       motto: finalMotto,
       found: result.data.result,
@@ -142,27 +141,28 @@ export async function extractMottoLLM(
     };
   }
 }
-
+function extractMottoFallback(text: string, company: string, sourceUrl?: string): MottoExtractionResult {
+  // No API key available - return no motto instead of misleading generic data
+  return {
+    motto: "-",
+    found: false,
+    reasoning: 'No API key available - motto extraction skipped',
+    origin: { source: 'fallback', sourceUrl, confidence: 'low', extractedFrom: 'API key not available' }
+  };
+}
 function buildRequestPayload(text: string, company: string, sourceUrl?: string) {
   const system = `You are a precise company culture analyst. Extract company mottos, values, or mission statements.
-
 CRITICAL RULES:
 - Only extract mottos/values that are explicitly stated as belonging to the company
 - Look for clear, direct company motto/values statements (e.g., "Our mission is...", "We believe in...", "Company values: ...")
 - If no clear company motto exists, return result: false and motto: "-"
-
 Return JSON with: motto (string), result (boolean), reasoning (string)`;
-
   const user = `Analyze this job posting text for company motto/values for "${company}".
-
 Company: ${company}
 Source: ${sourceUrl || "unknown"}
-
 Text to analyze:
 ${text.slice(0, 3000)}${text.length > 3000 ? "\n\n[truncated...]" : ""}
-
 Extract the company's motto, values, or mission statement if clearly stated. Be conservative - only return result: true if it's explicitly the company's motto/values.`;
-
   return {
     model: "gpt-4o-mini",
     messages: [
@@ -173,7 +173,6 @@ Extract the company's motto, values, or mission statement if clearly stated. Be 
     max_tokens: 500,
   };
 }
-
 function extractJson(text: string): unknown {
   try {
     // Try to find JSON in the response

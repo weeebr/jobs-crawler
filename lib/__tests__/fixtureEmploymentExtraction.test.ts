@@ -7,6 +7,10 @@ import { parseJobAd } from "../parseJobAd";
 describe("Employment Type Extraction from Fixtures", () => {
   const fixturesDir = join(__dirname, "fixtures");
 
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test-key-for-testing-only";
+  });
+
   it("should extract employment type from java-fullstack-erp.html", async () => {
     const fixturePath = join(fixturesDir, "java-fullstack-erp.html");
     const html = readFileSync(fixturePath, "utf-8");

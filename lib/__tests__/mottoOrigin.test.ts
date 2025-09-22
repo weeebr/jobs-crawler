@@ -28,14 +28,14 @@ describe('extractMottoLLM with origin tracking', () => {
       );
 
       expect(result).toEqual({
-        motto: 'Innovation through technology',
-        found: true,
-        reasoning: 'No API key available, using keyword fallback',
+        motto: '-',
+        found: false,
+        reasoning: 'No API key available - motto extraction skipped',
         origin: {
           source: 'fallback',
           sourceUrl: 'https://example.com/job',
           confidence: 'low',
-          extractedFrom: 'keyword-based extraction'
+          extractedFrom: 'API key not available'
         }
       });
     });
@@ -56,12 +56,12 @@ describe('extractMottoLLM with origin tracking', () => {
       expect(result).toEqual({
         motto: '-',
         found: false,
-        reasoning: 'No API key available, using keyword fallback',
+        reasoning: 'No API key available - motto extraction skipped',
         origin: {
           source: 'fallback',
           sourceUrl: 'https://example.com/job',
           confidence: 'low',
-          extractedFrom: 'keyword-based extraction'
+          extractedFrom: 'API key not available'
         }
       });
     });

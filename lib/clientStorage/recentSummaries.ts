@@ -1,5 +1,6 @@
 import type { AnalysisRecord } from "../types";
 import type { RecentAnalysisSummary } from "./types";
+import { recentAnalysisSummarySchema } from "../schemas";
 import { RECENT_ANALYSES_KEY, isBrowser } from "./types";
 
 export function loadRecentSummaries(): RecentAnalysisSummary[] {
@@ -7,46 +8,22 @@ export function loadRecentSummaries(): RecentAnalysisSummary[] {
   try {
     const raw = window.localStorage.getItem(RECENT_ANALYSES_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as Array<Partial<RecentAnalysisSummary>>;
+    const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       return [];
     }
+    
     const sanitized: RecentAnalysisSummary[] = [];
     for (const item of parsed) {
-      if (!item || typeof item !== "object") continue;
-      if (
-        typeof item.id !== "number" ||
-        typeof item.title !== "string" ||
-        typeof item.company !== "string" ||
-        typeof item.matchScore !== "number" ||
-        typeof item.createdAt !== "number" ||
-        (item.updatedAt !== undefined && typeof item.updatedAt !== "number")
-      ) {
+      try {
+        // Validate each item with Zod schema
+        const validated = recentAnalysisSummarySchema.parse(item);
+        sanitized.push(validated);
+      } catch (error) {
+        // Skip invalid items
+        console.warn("[clientStorage] invalid recent summary item:", error);
         continue;
       }
-
-      const stack = Array.isArray(item.stack)
-        ? item.stack.filter((entry): entry is string => typeof entry === "string")
-        : [];
-
-      sanitized.push({
-        id: item.id,
-        title: item.title,
-        company: item.company,
-        matchScore: item.matchScore,
-        createdAt: item.createdAt,
-        updatedAt: typeof item.updatedAt === "number" ? item.updatedAt : item.createdAt,
-        publishedAt:
-          typeof item.publishedAt === "string" ? item.publishedAt : undefined,
-        location: typeof item.location === "string" ? item.location : undefined,
-        workload: typeof item.workload === "string" ? item.workload : undefined,
-        duration: typeof item.duration === "string" ? item.duration : undefined,
-        size: typeof item.size === "string" ? item.size : undefined,
-        stack,
-        status: (item.status === "interested" || item.status === "applied") 
-          ? item.status 
-          : undefined,
-      });
     }
     return sanitized;
   } catch (error) {

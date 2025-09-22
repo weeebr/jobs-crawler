@@ -5,6 +5,10 @@ import { join } from "path";
 import { parseJobAd } from "../parseJobAd";
 
 describe("Team Size Extraction Test", () => {
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test-key-for-testing-only";
+  });
+
   it("should extract team size from HTML with team size information", async () => {
     const fixturePath = join(__dirname, "fixtures", "fullstack-medtech.html");
     const html = readFileSync(fixturePath, "utf-8");

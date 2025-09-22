@@ -106,8 +106,7 @@ function isValidUrl(url: string): boolean {
 }
 
 export function fallbackCompany(readable: ReadableContent) {
-  const text = readable.textContent;
-  if (!text) return undefined;
-  const match = text.match(/join the ([^\n,.]+?) team/i);
-  return match?.[1];
+  // Removed fragile regex pattern matching
+  // If we can't extract company from structured data, the job ad is malformed
+  return undefined;
 }

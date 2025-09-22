@@ -193,12 +193,9 @@ function trimAtKnownLabel(value: string): string {
   // Transform "Unlimited employment" to "Unlimited"
   const result = trimmed.replace(/^unlimited\s+employment$/i, "Unlimited");
   
-  // Filter out empty values and comma-only values
-  if (!result || result === "," || result.length === 0) {
-    return "";
-  }
-  
-  return result;
+  // Use centralized filtering instead of custom logic
+  const filtered = filterEmptyValue(result);
+  return filtered || "";
 }
 
 function escapeRegExp(input: string) {

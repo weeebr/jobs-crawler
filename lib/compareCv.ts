@@ -13,8 +13,8 @@ const KEYWORD_WEIGHT = 15;
 const ENVIRONMENT_WEIGHT = 20;
 
 export function compareCv(job: JobAdParsed, cv: CVProfile): ComparisonResult {
-  const jobStackSet = new Set(
-    job.stack.map((tech) => normalizeTechName(tech)).filter(Boolean),
+  const jobStackSet = new Set<string>(
+    job.stack.map((tech: string) => normalizeTechName(tech)).filter(Boolean),
   );
 
   const cvStackSet = new Set<string>();
@@ -46,7 +46,7 @@ export function compareCv(job: JobAdParsed, cv: CVProfile): ComparisonResult {
   const matchScore = roundMatchScore(rawScore);
 
   const gaps = job.stack.filter(
-    (tech) => !cvStackSet.has(normalizeTechName(tech)),
+    (tech: string) => !cvStackSet.has(normalizeTechName(tech)),
   );
 
   const reasoning = generateReasoning({
@@ -118,7 +118,7 @@ function intersectionSize(setA: Set<string>, setB: Set<string>) {
 }
 
 function calculateExperienceScore(cv: CVProfile): number {
-  const totalYears = cv.roles.reduce((sum, role) => sum + (role.years || 0), 0);
+  const totalYears = cv.roles.reduce((sum: number, role) => sum + (role.years || 0), 0);
   const avgYears = cv.roles.length > 0 ? totalYears / cv.roles.length : 0;
   
   // Score based on years of experience
@@ -190,7 +190,7 @@ function generateReasoning({
   }
   
   // Experience level
-  const totalYears = cv.roles.reduce((sum, role) => sum + (role.years || 0), 0);
+  const totalYears = cv.roles.reduce((sum: number, role) => sum + (role.years || 0), 0);
   if (totalYears >= 5) {
     reasoning.push(`✓ ${totalYears}+ years experience`);
   } else if (totalYears >= 2) {

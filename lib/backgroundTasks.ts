@@ -1,21 +1,4 @@
-import type { AnalysisRecord } from "./types";
-
-export interface BackgroundTask {
-  id: string;
-  searchUrl: string;
-  status: 'running' | 'completed' | 'failed' | 'cancelled';
-  progress: {
-    total: number;
-    completed: number;
-    current?: string;
-    message?: string;
-    url?: string;
-  };
-  results: AnalysisRecord[];
-  errors: { url: string; message: string }[];
-  startedAt: number;
-  completedAt?: number;
-}
+import type { AnalysisRecord, BackgroundTask } from "./schemas";
 
 type GlobalWithTasks = typeof globalThis & {
   __backgroundTasks?: Map<string, BackgroundTask>;

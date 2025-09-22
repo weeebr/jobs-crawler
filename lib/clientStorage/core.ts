@@ -1,4 +1,5 @@
 import type { AnalysisRecord, LegacyAnalysisRecord } from "../types";
+import { analysisRecordSchema, legacyAnalysisRecordSchema } from "../schemas";
 import { REPORT_STORAGE_PREFIX, isBrowser } from "./types";
 
 // Load complete analysis record with separated data
@@ -8,14 +9,21 @@ export function loadAnalysisRecord(id: number): AnalysisRecord | null {
     const raw = window.localStorage.getItem(REPORT_STORAGE_PREFIX + id);
     if (!raw) return null;
     
-    const record = JSON.parse(raw) as AnalysisRecord | LegacyAnalysisRecord;
+    const parsed = JSON.parse(raw);
     
-    // Handle legacy records by converting them
-    if ('analysis' in record && !('llmAnalysis' in record)) {
-      return convertLegacyRecord(record as LegacyAnalysisRecord);
+    // Try to validate as current format first
+    try {
+      return analysisRecordSchema.parse(parsed);
+    } catch (error) {
+      // Try legacy format
+      try {
+        const legacyRecord = legacyAnalysisRecordSchema.parse(parsed);
+        return convertLegacyRecord(legacyRecord);
+      } catch (legacyError) {
+        console.warn("[clientStorage] invalid analysis record format:", error);
+        return null;
+      }
     }
-    
-    return record as AnalysisRecord;
   } catch (error) {
     console.warn("[clientStorage] failed to load analysis", error);
     return null;

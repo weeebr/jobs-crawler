@@ -53,7 +53,7 @@ describe("rankMatchScore", () => {
 
     expect(result.source).toBe("heuristic");
     expect(result.matchScore).toBe(75);
-    expect(result.reasoning).toContain("LLM scoring unavailable");
+    expect(result.reasoning).toContain("LLM scoring unavailable - no API key");
   });
 
   it("falls back to heuristics when OpenAI API fails", async () => {

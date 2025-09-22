@@ -41,12 +41,18 @@ export async function parseJobAd(
   const $ = load(html);
   const readable = getReadableContent(html, options.sourceUrl);
 
-  const title = selectTitle($) ?? fallbackTitle(readable) ?? "Unknown role";
+  const title = selectTitle($) ?? fallbackTitle(readable);
+  if (!title) {
+    throw new Error("Cannot extract job title from malformed job ad");
+  }
+  
   const company =
     selectCompany($) ??
     guessCompanyFromUrl(options.sourceUrl) ??
-    fallbackCompany(readable) ??
-    "Unknown company";
+    fallbackCompany(readable);
+  if (!company) {
+    throw new Error("Cannot extract company name from malformed job ad");
+  }
   const companyUrl = selectCompanyUrl($);
 
   const combinedText = [

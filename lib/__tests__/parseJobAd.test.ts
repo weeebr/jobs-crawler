@@ -9,6 +9,10 @@ const fixturePath = join(__dirname, "fixtures", "java-fullstack-erp.html");
 const SAMPLE_HTML = readFileSync(fixturePath, "utf-8");
 
 describe("parseJobAd", () => {
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test-key-for-testing-only";
+  });
+
   it("extracts core job metadata", async () => {
     const job = await parseJobAd(SAMPLE_HTML, {
       sourceUrl: "https://www.jobs.ch/en/vacancies/detail/aaf5733e-e476-4c6b-8993-498de105ec02/",

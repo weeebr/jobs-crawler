@@ -33,7 +33,13 @@ export async function rankMatchScore(
 ): Promise<MatchRanking> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("OpenAI API key is required for job analysis. Please configure your API key in the environment variables.");
+    return {
+      source: "heuristic",
+      matchScore: input.heuristics.matchScore,
+      reasoning: ["LLM scoring unavailable - no API key", "Using heuristic-based scoring as fallback"],
+      gaps: input.heuristics.gaps,
+      recommendations: input.heuristics.recommendations || []
+    };
   }
 
   try {
@@ -55,9 +61,7 @@ export async function rankMatchScore(
 
     if (!response.ok) {
       const text = await response.text();
-      console.warn(
-        `[rankMatchScore] OpenAI responded ${response.status}: ${text.slice(0, 200)}`,
-      );
+      console.warn(`[rankMatchScore] OpenAI responded ${response.status}: ${text.slice(0, 200)}`);
       return fallbackRanking(input.heuristics);
     }
 
@@ -101,15 +105,8 @@ export async function rankMatchScore(
 }
 
 function fallbackRanking(heuristics: ComparisonResult): MatchRanking {
-  console.info(
-    `[rankMatchScore] fallback score=${heuristics.matchScore}`,
-  );
-  return {
-    matchScore: heuristics.matchScore,
-    reasoning:
-      "LLM scoring unavailable; using heuristic stack overlap and keyword coverage.",
-    source: "heuristic",
-  };
+  console.info(`[rankMatchScore] fallback score=${heuristics.matchScore}`);
+  return { matchScore: heuristics.matchScore, reasoning: "LLM scoring unavailable; using heuristic stack overlap and keyword coverage.", source: "heuristic" };
 }
 
 function buildRequestPayload({ job, cv, heuristics }: RankMatchInput) {

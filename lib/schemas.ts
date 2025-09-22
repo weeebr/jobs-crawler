@@ -100,3 +100,123 @@ export type AnalysisEnriched = z.infer<typeof analysisEnrichedSchema>;
 // Legacy alias for backwards compatibility during transition
 export const analysisSchema = analysisEnrichedSchema;
 export type AnalysisDTO = AnalysisEnriched;
+
+// Complete analysis record with clear separation
+export const analysisRecordSchema = z.object({
+  id: z.number().int().min(0),
+  // Fetched data from external sources (immutable)
+  job: jobAdFetchedSchema,
+  cv: cvProfileSchema,
+  // LLM-generated analysis (immutable after generation)
+  llmAnalysis: llmAnalysisSchema,
+  // User interactions and preferences (mutable)
+  userInteractions: userInteractionsSchema,
+  // Record metadata
+  createdAt: z.number().int().min(0),
+  updatedAt: z.number().int().min(0),
+});
+
+export type AnalysisRecord = z.infer<typeof analysisRecordSchema>;
+
+// Legacy combined record for backwards compatibility
+export const legacyAnalysisRecordSchema = z.object({
+  id: z.number().int().min(0),
+  job: jobAdFetchedSchema,
+  cv: cvProfileSchema,
+  analysis: analysisEnrichedSchema, // Combined LLM + User data
+  createdAt: z.number().int().min(0),
+  updatedAt: z.number().int().min(0),
+});
+
+export type LegacyAnalysisRecord = z.infer<typeof legacyAnalysisRecordSchema>;
+
+// Background task management
+export const backgroundTaskSchema = z.object({
+  id: z.string().min(1),
+  searchUrl: z.string().url(),
+  status: z.enum(['running', 'completed', 'failed', 'cancelled']),
+  progress: z.object({
+    total: z.number().int().min(0),
+    completed: z.number().int().min(0),
+    current: z.string().optional(),
+    message: z.string().optional(),
+    url: z.string().url().optional(),
+  }),
+  results: z.array(analysisRecordSchema).default([]),
+  errors: z.array(z.object({
+    url: z.string().url(),
+    message: z.string(),
+  })).default([]),
+  startedAt: z.number().int().min(0),
+  completedAt: z.number().int().min(0).optional(),
+});
+
+export type BackgroundTask = z.infer<typeof backgroundTaskSchema>;
+
+// Client storage schemas
+export const recentAnalysisSummarySchema = z.object({
+  id: z.number().int().min(0),
+  // Fetched data
+  title: z.string().min(1),
+  company: z.string().min(1),
+  publishedAt: z.string().optional(),
+  location: z.string().optional(),
+  workload: z.string().optional(),
+  duration: z.string().optional(),
+  size: z.string().optional(),
+  stack: z.array(z.string()).default([]),
+  // Enriched data
+  matchScore: z.number().min(0).max(100),
+  status: z.enum(['interested', 'applied']).optional(),
+  // Metadata
+  createdAt: z.number().int().min(0),
+  updatedAt: z.number().int().min(0),
+});
+
+export type RecentAnalysisSummary = z.infer<typeof recentAnalysisSummarySchema>;
+
+export const analysisStatusSchema = z.enum(['interested', 'applied']);
+export type AnalysisStatus = z.infer<typeof analysisStatusSchema>;
+
+export const filterStateSchema = z.object({
+  size: z.string().default('all'),
+  score: z.string().default('all'),
+  location: z.string().default('all'),
+  tech: z.string().default('all'),
+  status: z.union([z.literal('all'), analysisStatusSchema]).default('all'),
+  sort: z.enum(['newest', 'oldest', 'score-high', 'score-low']).default('newest'),
+});
+
+export type FilterState = z.infer<typeof filterStateSchema>;
+
+// API response schemas
+export const analyzeResponseSchema = z.object({
+  records: z.array(analysisRecordSchema),
+  errors: z.array(z.object({
+    url: z.string().url(),
+    message: z.string(),
+  })).optional(),
+});
+
+export type AnalyzeResponse = z.infer<typeof analyzeResponseSchema>;
+
+export const taskResponseSchema = z.object({
+  tasks: z.array(backgroundTaskSchema),
+});
+
+export type TaskResponse = z.infer<typeof taskResponseSchema>;
+
+// Streaming message schemas
+export const streamMessageSchema = z.object({
+  type: z.string().min(1),
+  data: z.any(),
+});
+
+export type StreamMessage = z.infer<typeof streamMessageSchema>;
+
+export const linkCollectionProgressSchema = z.object({
+  total: z.number().int().min(0),
+  completed: z.number().int().min(0),
+});
+
+export type LinkCollectionProgress = z.infer<typeof linkCollectionProgressSchema>;
