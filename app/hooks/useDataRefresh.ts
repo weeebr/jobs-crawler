@@ -1,0 +1,98 @@
+"use client";
+
+import { useCallback } from "react";
+import { persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
+import { isAnalysisComplete } from "@/lib/analysisValidation";
+import type { AnalysisRecord } from "@/lib/types";
+import type { BackgroundTask } from "@/lib/useBackgroundTasks";
+
+interface UseDataRefreshOptions {
+  clearAllTasks: (options?: { preserveAnalyses?: boolean }) => Promise<void>;
+  forceRefresh: () => void;
+  onError?: (message: string) => void;
+  onReset: () => Promise<void>;
+  onResetComplete: () => void;
+  startTask: (searchUrl: string, clearJobAdData?: boolean) => Promise<BackgroundTask>;
+}
+
+/**
+ * Hook for managing data refresh operations
+ * Works exactly like useDataReset but WITHOUT clearing localStorage/cached data
+ * This preserves existing analyses while refreshing the data source
+ */
+export function useDataRefresh({
+  clearAllTasks,
+  forceRefresh,
+  onError,
+  onReset,
+  onResetComplete,
+  startTask,
+}: UseDataRefreshOptions) {
+  const handleRefresh = useCallback(async (restartSearchUrl?: string) => {
+    console.info('[data-refresh] starting refresh - preserving cached data');
+
+    try {
+      await onReset();
+
+      console.info('[data-refresh] clearing running tasks while preserving analyses');
+      await clearAllTasks({ preserveAnalyses: true });
+      console.info('[data-refresh] tasks cleared (analyses preserved)');
+
+      console.info('[data-refresh] synchronizing analyses from API...');
+      const response = await fetch("/api/analyses", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as AnalysisRecord[];
+        const completeRecords = data.filter(isAnalysisComplete);
+        const incompleteCount = data.length - completeRecords.length;
+
+        if (incompleteCount > 0) {
+          console.warn(`[data-refresh] filtered out ${incompleteCount} incomplete analyses during refetch`);
+        }
+
+        const summaries = completeRecords.map((record) => {
+          persistAnalysisRecord(record);
+          return toSummary(record);
+        });
+
+        persistRecentSummaries(summaries);
+        forceRefresh();
+        console.info(`[data-refresh] synchronized ${summaries.length} complete analyses`);
+      } else {
+        const statusText = `${response.status} ${response.statusText}`.trim();
+        console.warn(`[data-refresh] failed to fetch fresh data from API (status: ${statusText})`);
+        onError?.('Failed to refresh analyses from API');
+      }
+
+      console.info('[data-refresh] refresh complete, normal processing resumed');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to refresh data';
+      console.error('[data-refresh] error during refresh operation:', error);
+      onError?.(message);
+    } finally {
+      onResetComplete();
+    }
+
+    // Restart background task if URL provided (only after refresh is complete)
+    if (restartSearchUrl?.trim()) {
+      try {
+        console.info('[data-refresh] restarting background task...');
+        const task = await startTask(restartSearchUrl.trim());
+        console.info(`[data-refresh] restarted background task ${task.id} after refresh`);
+      } catch (restartError) {
+        const errorMessage = restartError instanceof Error
+          ? restartError.message
+          : "Failed to restart background task after refresh";
+        console.error('[data-refresh] failed to restart background task:', errorMessage);
+        onError?.(errorMessage);
+      }
+    }
+  }, [clearAllTasks, forceRefresh, onError, onReset, onResetComplete, startTask]);
+
+  return {
+    handleRefresh,
+  };
+}
