@@ -19,6 +19,7 @@ import {
   extractMotto,
   extractPublishedAt,
   extractSize,
+  normalizeLocationLabel,
   extractWorkload,
 } from "./jobAd/metadata";
 import { extractEnhancedMetadata } from "./jobAd/metadata/structuredExtractor";
@@ -82,7 +83,8 @@ export async function parseJobAd(
   const structuredMetadata = extractEnhancedMetadata($, html, combinedText);
   
   const publishedAt = structuredMetadata.publishedAt || extractPublishedAt($);
-  const location = structuredMetadata.location || extractLocation($, combinedText);
+  const structuredLocation = normalizeLocationLabel(structuredMetadata.location);
+  const location = structuredLocation || extractLocation($, combinedText);
   const workload = structuredMetadata.workload || extractWorkload($, combinedText);
   const duration = structuredMetadata.duration || extractDuration($, combinedText);
   const language = structuredMetadata.language || extractLanguage($, combinedText);

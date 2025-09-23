@@ -1,15 +1,17 @@
 import type { FilterState } from "@/lib/clientStorage";
 import type { DynamicOptions } from "./types";
 import { SCORE_FILTERS, STATUS_FILTERS, SORT_OPTIONS } from "./types";
+import { DEFAULT_FILTER_STATE } from "@/lib/clientStorage";
 
 interface FilterControlsProps {
   filters: FilterState;
   dynamicOptions: DynamicOptions;
   onFilterChange: (key: keyof FilterState, value: FilterState[keyof FilterState]) => void;
+  onResetFilters: () => void;
   isVisible: boolean;
 }
 
-export function FilterControls({ filters, dynamicOptions, onFilterChange, isVisible }: FilterControlsProps) {
+export function FilterControls({ filters, dynamicOptions, onFilterChange, onResetFilters, isVisible }: FilterControlsProps) {
   return (
     <div className="w-full">
       <div className={`filter-grid transition-all duration-300 ${

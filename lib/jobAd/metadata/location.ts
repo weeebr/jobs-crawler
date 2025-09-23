@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import { extractEnhancedMetadata } from "./structuredExtractor";
 import { filterEmptyValue } from "./filterUtils";
+import { normalizeLocationLabel } from "./locationUtils";
 
 export function extractLocation(
   $: ReturnType<typeof load>,
@@ -9,7 +10,10 @@ export function extractLocation(
   // Try structured extraction first
   const structured = extractEnhancedMetadata($, $.html(), text);
   if (structured.location) {
-    return structured.location;
+    const normalizedStructured = normalizeLocationLabel(structured.location);
+    if (normalizedStructured && isValidLocation(normalizedStructured)) {
+      return normalizedStructured;
+    }
   }
 
   // Fallback to original logic
@@ -27,14 +31,21 @@ export function extractLocation(
   for (const selector of selectors) {
     const candidate = $(selector).first().text().trim();
     const filtered = filterEmptyValue(candidate);
-    if (filtered && isValidLocation(filtered)) {
-      return filtered.replace(/\s+/g, " ");
+    if (filtered) {
+      const normalized = normalizeLocationLabel(filtered);
+      if (normalized && isValidLocation(normalized)) {
+        return normalized;
+      }
     }
   }
 
   const locationLine = extractLocationFromText(text);
   const filtered = filterEmptyValue(locationLine || undefined);
-  return filtered || undefined;
+  if (!filtered) {
+    return undefined;
+  }
+  const normalized = normalizeLocationLabel(filtered);
+  return normalized && isValidLocation(normalized) ? normalized : undefined;
 }
 
 function extractLocationFromText(text: string): string | null {
@@ -45,12 +56,15 @@ function extractLocationFromText(text: string): string | null {
     if (trimmed.length === 0) continue;
 
     // Look for explicit location patterns first
-    const locationMatch = trimmed.match(/(?:location|city|place)[:]\s*([A-Za-z\s,.-]+)/i);
+    const locationMatch = trimmed.match(/(?:location|city|place)[:]\s*([^\n]+)/i);
     if (locationMatch && locationMatch[1]) {
       const candidate = locationMatch[1].trim();
       const filtered = filterEmptyValue(candidate);
-      if (filtered && isValidLocation(filtered)) {
-        return filtered;
+      if (filtered) {
+        const normalized = normalizeLocationLabel(filtered);
+        if (normalized && isValidLocation(normalized)) {
+          return normalized;
+        }
       }
     }
 
@@ -59,8 +73,11 @@ function extractLocationFromText(text: string): string | null {
         trimmed.toLowerCase().includes('city') || 
         trimmed.toLowerCase().includes('place')) {
       const filtered = filterEmptyValue(trimmed);
-      if (filtered && isValidLocation(filtered) && filtered.length >= 2 && filtered.length <= 30) {
-        return filtered;
+      if (filtered) {
+        const normalized = normalizeLocationLabel(filtered);
+        if (normalized && isValidLocation(normalized) && normalized.length >= 2 && normalized.length <= 80) {
+          return normalized;
+        }
       }
     }
   }
@@ -84,5 +101,14 @@ function isValidLocation(text: string): boolean {
     return false;
   }
 
-  return /^[A-Za-z\s,.-]+$/.test(trimmed) && trimmed.length <= 50;
+  if (!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(trimmed)) {
+    return false;
+  }
+
+  if (/[{}[\]<>|]/.test(trimmed)) {
+    return false;
+  }
+
+  const allowedPattern = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s,.'()\/&+\-\u2013\u2014]+$/u;
+  return allowedPattern.test(trimmed);
 }

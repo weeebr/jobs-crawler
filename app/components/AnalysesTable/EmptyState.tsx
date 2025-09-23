@@ -1,9 +1,10 @@
 interface EmptyStateProps {
   type: "no-analyses" | "no-matches";
   onAction?: () => void;
+  onResetFilters?: () => void;
 }
 
-export function EmptyState({ type, onAction }: EmptyStateProps) {
+export function EmptyState({ type, onAction, onResetFilters }: EmptyStateProps) {
   if (type === "no-analyses") {
     return (
       <div className="text-center py-12">
@@ -33,9 +34,17 @@ export function EmptyState({ type, onAction }: EmptyStateProps) {
         </svg>
       </div>
       <h3 className="text-lg font-semibold text-neutral-900 mb-2">No matches found</h3>
-      <p className="text-neutral-600">
+      <p className="text-neutral-600 mb-4">
         Try adjusting your filters to see more results.
       </p>
+      {onResetFilters && (
+        <button 
+          onClick={onResetFilters}
+          className="text-sm text-blue-600 hover:text-blue-700 transition-colors px-3 py-1 rounded border border-blue-200 hover:bg-blue-50"
+        >
+          Reset all filters
+        </button>
+      )}
     </div>
   );
 }

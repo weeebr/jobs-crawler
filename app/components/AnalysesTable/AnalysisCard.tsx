@@ -10,6 +10,8 @@ interface AnalysisCardProps {
   analysis: RecentAnalysisSummary;
   status: AnalysisStatus;
   isNew?: boolean;
+  onStatusToggle: (id: number, status: AnalysisStatus) => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
 function formatRelativeDate(dateString: string): string {
@@ -38,17 +40,48 @@ function getMatchScoreClass(score: number): string {
   return 'match-score-poor';
 }
 
-export function AnalysisCard({ analysis, status, isNew = false }: AnalysisCardProps) {
+function createButtonClickHandler(
+  handler: () => void | Promise<void>
+): (e: React.MouseEvent) => void {
+  return (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handler();
+  };
+}
+
+function MetadataItems({ items }: { items: Array<{ value: string | undefined }> }) {
+  if (items.length === 0) return null;
+  
+  return (
+    <div className="flex items-center gap-2 text-xs text-neutral-600">
+      {items.map((item, index) => (
+        <div key={index} className="flex items-center gap-1">
+          <svg className="w-3 h-3 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="font-medium">{item.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function AnalysisCard({ analysis, status, isNew = false, onStatusToggle, onDelete }: AnalysisCardProps) {
   const displayScore = roundMatchScore(analysis.matchScore);
 
   const handleStatusToggle = (newStatus: AnalysisStatus) => {
-    // TODO: Implement status toggle functionality
-    console.log('Status toggle:', analysis.id, newStatus);
+    onStatusToggle(analysis.id, newStatus);
   };
 
-  const handleDelete = () => {
-    // TODO: Implement delete functionality
-    console.log('Delete:', analysis.id);
+  const handleDelete = async () => {
+    console.log('Delete button clicked for analysis:', analysis.id);
+    try {
+      await onDelete(analysis.id);
+      console.log('Delete completed successfully');
+    } catch (error) {
+      console.error('Failed to delete analysis:', error);
+    }
   };
 
   const metadataItems = [
@@ -107,34 +140,7 @@ export function AnalysisCard({ analysis, status, isNew = false }: AnalysisCardPr
         </div>
 
         {/* Metadata Row */}
-        {metadataItems.length > 0 && (
-          <div className="flex items-center gap-2 text-xs text-neutral-600">
-            {filterDisplayValue(analysis.workload) && (
-              <div className="flex items-center gap-1">
-                <svg className="w-3 h-3 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-medium">{filterDisplayValue(analysis.workload)}</span>
-              </div>
-            )}
-            {filterDisplayValue(analysis.duration) && (
-              <div className="flex items-center gap-1">
-                <svg className="w-3 h-3 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="font-medium">{filterDisplayValue(analysis.duration)}</span>
-              </div>
-            )}
-            {filterDisplayValue(analysis.size) && (
-              <div className="flex items-center gap-1">
-                <svg className="w-3 h-3 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="font-medium">{filterDisplayValue(analysis.size)}</span>
-              </div>
-            )}
-          </div>
-        )}
+        <MetadataItems items={metadataItems} />
 
         {/* Tech Stack */}
         {Array.isArray(analysis.stack) && analysis.stack.length > 0 && (
@@ -156,7 +162,7 @@ export function AnalysisCard({ analysis, status, isNew = false }: AnalysisCardPr
         <div className="flex items-center space-x-2">
           <button
             type="button"
-            onClick={() => handleStatusToggle("interested")}
+            onClick={createButtonClickHandler(() => handleStatusToggle("interested"))}
             className={`text-xs px-3 py-1 rounded-full border transition ${
               status === "interested" 
                 ? "border-accent-500 bg-accent-50 text-accent-700" 
@@ -167,7 +173,7 @@ export function AnalysisCard({ analysis, status, isNew = false }: AnalysisCardPr
           </button>
           <button
             type="button"
-            onClick={() => handleStatusToggle("applied")}
+            onClick={createButtonClickHandler(() => handleStatusToggle("applied"))}
             className={`text-xs px-3 py-1 rounded-full border transition ${
               status === "applied" 
                 ? "border-primary-500 bg-primary-50 text-primary-700" 
@@ -180,7 +186,7 @@ export function AnalysisCard({ analysis, status, isNew = false }: AnalysisCardPr
         <div className="flex items-center space-x-2">
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={createButtonClickHandler(handleDelete)}
             className="text-xs text-error-600 hover:text-error-700 transition-colors"
           >
             Delete

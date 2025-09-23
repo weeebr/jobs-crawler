@@ -3,6 +3,8 @@ import type { AnalysisStatus, RecentAnalysisSummary } from "@/lib/clientStorage"
 export interface AnalysesTableProps {
   analyses: RecentAnalysisSummary[];
   statuses: Record<number, AnalysisStatus>;
+  onStatusToggle: (id: number, status: AnalysisStatus) => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
 export interface DynamicOptions {

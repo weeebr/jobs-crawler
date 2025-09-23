@@ -38,28 +38,36 @@ export function useDataPersistence({ statuses, forceRefresh }: UseDataPersistenc
   }, [statuses, forceRefresh]);
 
   const handleDelete = useCallback(async (id: number) => {
+    console.log('[useDataPersistence] handleDelete called for id:', id);
     try {
+      console.log('[useDataPersistence] making DELETE request to /api/analysis/' + id);
       const response = await fetch(`/api/analysis/${id}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
       });
+      console.log('[useDataPersistence] DELETE response status:', response.status);
       if (!response.ok && response.status !== 404) {
         throw new Error(`Delete failed (${response.status})`);
       }
 
+      console.log('[useDataPersistence] removing analysis record from localStorage');
       removeAnalysisRecord(id);
       
       // Clean up status for deleted analysis
       const current = statuses;
       if (current[id]) {
+        console.log('[useDataPersistence] cleaning up status for deleted analysis');
         const next = { ...current };
         delete next[id];
         persistAnalysisStatuses(next);
       }
 
+      console.log('[useDataPersistence] triggering forceRefresh');
       // Trigger immediate UI update to reflect deletion
       forceRefresh();
+      console.log('[useDataPersistence] delete completed successfully');
     } catch (deleteError) {
+      console.error('[useDataPersistence] delete error:', deleteError);
       const message =
         deleteError instanceof Error
           ? deleteError.message

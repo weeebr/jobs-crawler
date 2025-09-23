@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AnalysisStatus, FilterState } from "@/lib/clientStorage";
-import { loadFilterState, persistFilterState } from "@/lib/clientStorage";
+import { loadFilterState, persistFilterState, DEFAULT_FILTER_STATE } from "@/lib/clientStorage";
 
 import { AnalysisCard } from "./AnalysesTable/AnalysisCard";
 import { EmptyState } from "./AnalysesTable/EmptyState";
@@ -14,6 +14,8 @@ import { loadSeenAnalysisIds, persistSeenAnalysisIds } from "@/lib/clientStorage
 export function AnalysesTable({
   analyses,
   statuses,
+  onStatusToggle,
+  onDelete,
 }: AnalysesTableProps) {
   const [filters, setFilters] = useState<FilterState>(() => loadFilterState());
   const [showFilters, setShowFilters] = useState(false);
@@ -41,6 +43,11 @@ export function AnalysesTable({
     });
   };
 
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTER_STATE);
+    persistFilterState(DEFAULT_FILTER_STATE);
+  };
+
   // Check if any filter is active (not set to default "all" values)
   const hasActiveFilters = 
     filters.size !== "all" ||
@@ -53,9 +60,43 @@ export function AnalysesTable({
   useEffect(() => {
     console.info(
       `[analyses-table] showing ${filteredAnalyses.length}/${analyses.length} analyses after filters`,
-      filters,
+      { 
+        filters, 
+        statuses: Object.keys(statuses).length,
+        hasSearch: filters.search?.trim().length > 0,
+        searchTerm: filters.search
+      }
     );
-  }, [filteredAnalyses.length, analyses.length, filters]);
+    
+    // Debug: Log a few sample analyses and their statuses
+    if (analyses.length > 0) {
+      console.info('[analyses-table] sample analyses:', analyses.slice(0, 3).map(a => ({
+        id: a.id,
+        title: a.title,
+        status: statuses[a.id] ?? a.status,
+        hasStatus: statuses[a.id] !== undefined
+      })));
+    }
+    
+    // If we have analyses but no filtered results, log the filter details
+    if (analyses.length > 0 && filteredAnalyses.length === 0) {
+      console.warn('[analyses-table] No results after filtering:', {
+        totalAnalyses: analyses.length,
+        activeFilters: {
+          status: filters.status,
+          search: filters.search,
+          size: filters.size,
+          score: filters.score,
+          location: filters.location,
+          tech: filters.tech
+        },
+        statusCounts: Object.values(statuses).reduce((acc, status) => {
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+    }
+  }, [filteredAnalyses.length, analyses.length, filters, statuses]);
 
   useEffect(() => {
     if (analyses.length === 0) {
@@ -110,6 +151,14 @@ export function AnalysesTable({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-xs text-blue-600 hover:text-blue-700 transition-colors px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+            >
+              Reset filters
+            </button>
+          )}
         </div>
         <div className="text-sm text-neutral-500">
           {filteredAnalyses.length} of {analyses.length} analyses
@@ -123,12 +172,16 @@ export function AnalysesTable({
         filters={filters}
         dynamicOptions={dynamicOptions}
         onFilterChange={updateFilter}
+        onResetFilters={resetFilters}
         isVisible={showFilters}
       />
 
       {/* Analysis Cards */}
       {filteredAnalyses.length === 0 ? (
-        <EmptyState type="no-matches" />
+        <EmptyState 
+          type="no-matches" 
+          onResetFilters={resetFilters}
+        />
       ) : (
         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredAnalyses.map((analysis) => {
@@ -139,6 +192,8 @@ export function AnalysesTable({
                 analysis={analysis}
                 status={status}
                 isNew={freshIds.has(analysis.id)}
+                onStatusToggle={onStatusToggle}
+                onDelete={onDelete}
               />
             );
           })}

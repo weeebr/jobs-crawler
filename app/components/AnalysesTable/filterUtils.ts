@@ -22,8 +22,17 @@ export function isValidLocationForFilter(text: string): boolean {
     return false;
   }
   
-  // Accept city names, countries, and simple location formats
-  return /^[A-Za-z\s,.-]+$/.test(trimmed) && trimmed.length <= 50;
+  // Accept city names, countries, and common remote formats with lightweight sanitization
+  if (!/[A-Za-z]/.test(trimmed)) {
+    return false;
+  }
+
+  if (/[{}[\]<>|]/.test(trimmed)) {
+    return false;
+  }
+
+  const allowedPattern = /^[A-Za-z0-9\s,.'()\/&+\-\u2013\u2014]+$/;
+  return allowedPattern.test(trimmed);
 }
 
 export function deriveDynamicOptions(analyses: RecentAnalysisSummary[]): DynamicOptions {

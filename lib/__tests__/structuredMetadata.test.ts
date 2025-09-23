@@ -31,7 +31,7 @@ describe("Structured Metadata Extraction - Essential Tests", () => {
     expect(metadata.workload).toBe("60 – 100%");
     expect(metadata.duration).toBe("Unlimited");
     expect(metadata.language).toBe("German (Fluent), English (Intermediate)");
-    expect(metadata.location).toBe("Solothurnerstrasse 235, 4600 Olten");
+    expect(metadata.location).toBe("4600 Olten");
   });
 
   test("falls back to semantic extraction for non-structured HTML", () => {
@@ -51,6 +51,6 @@ describe("Structured Metadata Extraction - Essential Tests", () => {
     expect(metadata.workload).toBe("80%");
     expect(metadata.duration).toBe("Permanent");
     expect(metadata.language).toBe("English (Fluent)");
-    expect(metadata.location).toBe("Zurich, Switzerland");
+    expect(metadata.location).toBe("Zurich");
   });
 });

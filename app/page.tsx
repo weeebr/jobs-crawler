@@ -32,6 +32,8 @@ export default function HomePage() {
     isStreaming,
     handleRefetch,
     handleRefresh,
+    handleStatusToggle,
+    handleDelete,
     errorMessage,
     clearError,
   } = useAnalysisData();
@@ -157,6 +159,8 @@ export default function HomePage() {
             <AnalysesTable
               analyses={recent}
               statuses={statuses}
+              onStatusToggle={handleStatusToggle}
+              onDelete={handleDelete}
             />
           </div>
         )}

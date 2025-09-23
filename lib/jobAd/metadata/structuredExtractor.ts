@@ -1,5 +1,6 @@
 import { load } from "cheerio";
 import { filterEmptyValue, filterDurationValue } from "./filterUtils";
+import { normalizeLocationLabel } from "./locationUtils";
 
 /**
  * Enhanced metadata extraction that leverages structured HTML data
@@ -66,7 +67,10 @@ export function extractStructuredMetadata(
     const locationText = locationElement.text().trim();
     const filtered = filterEmptyValue(locationText);
     if (filtered) {
-      metadata.location = filtered;
+      const normalized = normalizeLocationLabel(filtered);
+      if (normalized) {
+        metadata.location = normalized;
+      }
     }
   }
 
@@ -211,7 +215,13 @@ export function extractSemanticMetadata(
     /location[:\s-]*([^.\n]+)/i,
     /workplace[:\s-]*([^.\n]+)/i,
   ];
-  metadata.location = extractByPatterns(text, locationPatterns);
+  const semanticLocation = extractByPatterns(text, locationPatterns);
+  if (semanticLocation) {
+    const normalized = normalizeLocationLabel(semanticLocation);
+    if (normalized) {
+      metadata.location = normalized;
+    }
+  }
 
   // Team size patterns - more specific to avoid false matches
   const teamSizePatterns = [
