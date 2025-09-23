@@ -54,17 +54,4 @@ export function JobContent({ record }: JobContentProps) {
   );
 }
 
-interface DetailProps {
-  label: string;
-  value: string;
-}
-
-function Detail({ label, value }: DetailProps) {
-  return (
-    <div className="flex justify-between items-center">
-      <span className="text-gray-600">{label}:</span>
-      <span className="font-medium text-gray-900">{value}</span>
-    </div>
-  );
-}
 

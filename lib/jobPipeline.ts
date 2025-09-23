@@ -2,7 +2,7 @@ import { fetchJobAd, type FetchJobAdOptions } from "./fetchJobAd";
 import { parseJobAd } from "./parseJobAd";
 import { compareCv } from "./compareCv";
 import { rankMatchScore } from "./rankMatch";
-import { saveAnalysis } from "./analysisStore";
+import { analysisStorage } from "./analysisStorageHandler";
 import { extractJobLinks } from "./extractJobLinks";
 import {
   jobAdFetchedSchema,
@@ -117,7 +117,7 @@ export async function analyzeJob(
   const llmAnalysis = llmAnalysisSchema.parse(llmAnalysisInput);
   const userInteractions = userInteractionsSchema.parse(userInteractionsInput);
 
-  const record = saveAnalysis({
+  const record = analysisStorage.save({
     id: Date.now(),
     job: normalizedJob,
     cv: cvProfile,
@@ -125,7 +125,7 @@ export async function analyzeJob(
     userInteractions,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  });
+  }, "server");
 
   console.info(`[jobPipeline] analyzed job id=${record.id} score=${llmAnalysis.matchScore} source=${ranking.source}`);
 

@@ -27,9 +27,9 @@ export const STATUS_FILTERS: Array<{ label: string; value: "all" | AnalysisStatu
   { label: "Applied", value: "applied" },
 ];
 
-export const SORT_OPTIONS: Array<{ label: string; value: "newest" | "oldest" | "score-high" | "score-low" }> = [
-  { label: "Newest", value: "newest" },
-  { label: "Oldest", value: "oldest" },
+export const SORT_OPTIONS: Array<{ label: string; value: "posting-newest" | "posting-oldest" | "score-high" | "score-low" }> = [
+  { label: "Posting Date ↓", value: "posting-newest" },
+  { label: "Posting Date ↑", value: "posting-oldest" },
   { label: "Score ↓", value: "score-high" },
   { label: "Score ↑", value: "score-low" },
 ];

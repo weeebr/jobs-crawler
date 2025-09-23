@@ -26,7 +26,7 @@ export function filterEmptyValue(value: string | undefined): string | undefined 
   
   // Check for values that are just labels without content (e.g., "Location:", "Workload:", etc.)
   // Only match labels that end with colon or are followed by whitespace, not standalone words
-  const labelOnlyPattern = /^(location|workload|language|duration|team|salary|published)[:\s]+$/i;
+  const labelOnlyPattern = /^(location|workload|language|duration|company|salary|published)[:\s]+$/i;
   if (labelOnlyPattern.test(trimmed)) {
     return undefined;
   }
@@ -145,22 +145,22 @@ export function filterDurationValue(value: string | undefined): string | undefin
 }
 
 /**
- * Format team size for display with "+" suffix
+ * Format company size for display with "+" suffix
  * This is used for visual presentation in dashboard and job detail pages
  */
-export function formatTeamSizeForDisplay(teamSize: string | undefined): string | undefined {
-  if (!teamSize) return undefined;
+export function formatCompanySizeForDisplay(companySize: string | undefined): string | undefined {
+  if (!companySize) return undefined;
   
   // If it's already a numeric value, add "+"
-  if (/^\d+$/.test(teamSize)) {
-    return `${teamSize}+`;
+  if (/^\d+$/.test(companySize)) {
+    return `${companySize}+`;
   }
   
   // If it's already formatted with "+", return as is
-  if (teamSize.endsWith('+')) {
-    return teamSize;
+  if (companySize.endsWith('+')) {
+    return companySize;
   }
   
   // For non-numeric values (like "klein", "agil"), return as is
-  return teamSize;
+  return companySize;
 }

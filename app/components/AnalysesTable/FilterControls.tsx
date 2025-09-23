@@ -6,11 +6,10 @@ interface FilterControlsProps {
   filters: FilterState;
   dynamicOptions: DynamicOptions;
   onFilterChange: (key: keyof FilterState, value: FilterState[keyof FilterState]) => void;
-  onResetFilters: () => void;
   isVisible: boolean;
 }
 
-export function FilterControls({ filters, dynamicOptions, onFilterChange, onResetFilters, isVisible }: FilterControlsProps) {
+export function FilterControls({ filters, dynamicOptions, onFilterChange, isVisible }: FilterControlsProps) {
   return (
     <div className="w-full">
       <div className={`filter-grid transition-all duration-300 ${

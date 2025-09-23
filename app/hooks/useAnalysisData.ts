@@ -17,12 +17,14 @@ export function useAnalysisData() {
   const [allowedTaskIds, setAllowedTaskIds] = useState<Set<string>>(new Set()); // Only process tasks created after reset
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  const { tasks, activeTasks, startTask, clearAllTasks, isStreaming } = useBackgroundTasks({
+  const { tasks, startTask, clearAllTasks, isStreaming } = useBackgroundTasks({
     onError: (message) => setErrorMessage(message)
   });
-  
+
+  const activeTasks = tasks.filter(task => task.status === 'running');
+
   // Real-time dashboard updates
-  const { realtimeRecent } = useRealtimeDashboard({ activeTasks, recent });
+  const { realtimeRecent } = useRealtimeDashboard({ recent });
 
   // Data persistence operations
   const { handleStatusToggle, handleDelete } = useDataPersistence({

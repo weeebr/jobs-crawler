@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AnalysisStatus, FilterState } from "@/lib/clientStorage";
+import type { FilterState } from "@/lib/clientStorage";
 import { loadFilterState, persistFilterState, DEFAULT_FILTER_STATE } from "@/lib/clientStorage";
 
 import { AnalysisCard } from "./AnalysesTable/AnalysisCard";
@@ -36,7 +36,7 @@ export function AnalysesTable({
       return;
     }
 
-    console.info('[analyses-table] resetting stale team size filter', {
+    console.info('[analyses-table] resetting stale company size filter', {
       previousSizeFilter: filters.size,
     });
 
@@ -78,7 +78,7 @@ export function AnalysesTable({
     filters.location !== "all" ||
     filters.tech !== "all" ||
     filters.status !== "all" ||
-    filters.sort !== "newest";
+    filters.sort !== "posting-newest";
 
   useEffect(() => {
     console.info(
@@ -119,7 +119,7 @@ export function AnalysesTable({
         }, {} as Record<string, number>)
       });
     }
-  }, [filteredAnalyses.length, analyses.length, filters, statuses]);
+  }, [filteredAnalyses.length, analyses.length, analyses, filters, statuses]);
 
   useEffect(() => {
     if (analyses.length === 0) {
@@ -195,15 +195,13 @@ export function AnalysesTable({
         filters={filters}
         dynamicOptions={dynamicOptions}
         onFilterChange={updateFilter}
-        onResetFilters={resetFilters}
         isVisible={showFilters}
       />
 
       {/* Analysis Cards */}
       {filteredAnalyses.length === 0 ? (
-        <EmptyState 
-          type="no-matches" 
-          onResetFilters={resetFilters}
+        <EmptyState
+          type="no-matches"
         />
       ) : (
         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">

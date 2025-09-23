@@ -2,10 +2,8 @@ import type { ReactNode } from "react";
 
 import type { AnalysisHeader } from "../hooks/useAnalysisRecord";
 import type { AnalysisRecord } from "@/lib/types";
-import { DateWithTooltip } from "./helpers";
 import { roundMatchScore } from "@/lib/matchScore";
-import { formatTeamSizeForDisplay } from "@/lib/jobAd/metadata/filterUtils";
-import { formatPostedDate } from "@/lib/dateUtils";
+import { formatCompanySizeForDisplay } from "@/lib/jobAd/metadata/filterUtils";
 
 interface JobMetadataBarProps {
   header: AnalysisHeader | null;
@@ -61,7 +59,7 @@ export function JobMetadataBar({ header, record }: JobMetadataBarProps) {
             />
           )}
           
-          {header.teamSize && (
+          {header.companySize && (
             <MetadataCard
               icon={
                 <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,8 +71,8 @@ export function JobMetadataBar({ header, record }: JobMetadataBarProps) {
                   />
                 </svg>
               }
-              title="Team"
-              value={formatTeamSizeForDisplay(header.teamSize)}
+              title="Company size"
+              value={formatCompanySizeForDisplay(header.companySize)}
             />
           )}
         </div>
@@ -117,7 +115,7 @@ export function JobMetadataBar({ header, record }: JobMetadataBarProps) {
             />
           )}
           
-          {header.teamSize && (
+          {header.companySize && (
             <MetadataCard
               icon={
                 <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,8 +127,8 @@ export function JobMetadataBar({ header, record }: JobMetadataBarProps) {
                   />
                 </svg>
               }
-              title="Team"
-              value={formatTeamSizeForDisplay(header.teamSize)}
+              title="Company size"
+              value={formatCompanySizeForDisplay(header.companySize)}
             />
           )}
         </div>

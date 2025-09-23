@@ -1,6 +1,10 @@
 interface CompanyValuesProps {
   motto: string;
-  mottoOrigin?: any;
+  mottoOrigin?: {
+    source: string;
+    confidence?: string;
+    extractedFrom?: string;
+  };
 }
 
 export function CompanyValues({ motto, mottoOrigin }: CompanyValuesProps) {
@@ -17,7 +21,7 @@ export function CompanyValues({ motto, mottoOrigin }: CompanyValuesProps) {
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 mb-1">Company Values</h3>
           <blockquote className="text-sm text-gray-700 leading-relaxed italic border-l-2 border-blue-300 pl-2 line-clamp-3">
-            "{motto}"
+            &ldquo;{motto}&rdquo;
           </blockquote>
           {mottoOrigin && (
             <div className="text-xs text-gray-500 flex items-start gap-1 mt-2">

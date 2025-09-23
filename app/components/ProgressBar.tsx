@@ -27,6 +27,7 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(
             <div
               ref={ref}
               className={`h-1 ${getProgressBarColor()} transition-[width] duration-200 ease-out`}
+              style={{ width: `${percent}%` }}
             />
           ) : (
             <div className="relative h-1 overflow-hidden">

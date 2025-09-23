@@ -10,7 +10,7 @@ export const baseJobDataSchema = z.object({
   workload: z.string().optional(),
   duration: z.string().optional(),
   size: z.enum(["5", "10", "20", "50", "100", "200", "500"]).optional(),
-  teamSize: z.string().optional(),
+  companySize: z.string().optional(),
 });
 
 // Raw fetched job data from external sources
@@ -39,4 +39,3 @@ export type JobAdFetched = z.infer<typeof jobAdFetchedSchema>;
 // Legacy alias for backwards compatibility during transition
 export const jobAdParsedSchema = jobAdFetchedSchema;
 export type JobAdParsed = JobAdFetched;
-

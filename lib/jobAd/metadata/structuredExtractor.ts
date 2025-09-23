@@ -11,13 +11,12 @@ export interface StructuredMetadata {
   location?: string;
   publishedAt?: string;
   salary?: string;
-  teamSize?: string;
+  companySize?: string;
 }
 
 // Extract metadata from structured HTML using data attributes and semantic selectors
 export function extractStructuredMetadata(
   $: ReturnType<typeof load>,
-  html: string,
 ): StructuredMetadata {
   const metadata: StructuredMetadata = {};
 
@@ -89,14 +88,18 @@ export function extractStructuredMetadata(
     }
   }
 
-  // Extract team size
-  const teamSizeElement = $('[data-cy="info-team_size"]');
-  if (teamSizeElement.length) {
-    const teamSizeText = teamSizeElement.find('span:contains("Team size:")').next().text().trim();
-    const filtered = filterEmptyValue(teamSizeText);
+  // Extract company size from structured metadata; support legacy team labels
+  const companySizeElement = $('[data-cy="info-company_size"], [data-cy="info-team_size"]');
+  if (companySizeElement.length) {
+    const companySizeText = companySizeElement
+      .find('span:contains("Company size:"), span:contains("Team size:")')
+      .next()
+      .text()
+      .trim();
+    const filtered = filterEmptyValue(companySizeText);
     if (filtered) {
-      metadata.teamSize = filtered;
-      console.info(`[extractStructuredMetadata] found teamSize: "${filtered}"`);
+      metadata.companySize = filtered;
+      console.info(`[extractStructuredMetadata] found companySize: "${filtered}"`);
     }
   }
   
@@ -210,9 +213,9 @@ export function extractSemanticMetadata(
     }
   }
 
-  // Team size patterns - more specific to avoid false matches
-  const teamSizePatterns = [
-    // Specific team size mentions with numbers
+  // Company size patterns - more specific to avoid false matches
+  const companySizePatterns = [
+    // Specific company/team size mentions with numbers
     /team size[:\s-]*(\d+)/i,
     /team\s*(?:size|größe)[:\s-]*(\d+)/i,
     /(\d+)\s*(?:people|members|developers|engineers|team members)/i,
@@ -227,16 +230,16 @@ export function extractSemanticMetadata(
     /(?:agil|agile)\w*\s*(?:klein|small|wenig)\w*\s*team/i,
   ];
   
-  // Extract team size and normalize to single word
-  const extractedTeamSize = extractByPatterns(text, teamSizePatterns);
-  if (extractedTeamSize) {
+  // Extract company size and normalize to single word descriptors when possible
+  const extractedCompanySize = extractByPatterns(text, companySizePatterns);
+  if (extractedCompanySize) {
     // Normalize to single word - extract the most important descriptor
-    if (extractedTeamSize.toLowerCase().includes('klein') || extractedTeamSize.toLowerCase().includes('small')) {
-      metadata.teamSize = 'klein';
-    } else if (extractedTeamSize.toLowerCase().includes('agil') || extractedTeamSize.toLowerCase().includes('agile')) {
-      metadata.teamSize = 'agil';
+    if (extractedCompanySize.toLowerCase().includes('klein') || extractedCompanySize.toLowerCase().includes('small')) {
+      metadata.companySize = 'klein';
+    } else if (extractedCompanySize.toLowerCase().includes('agil') || extractedCompanySize.toLowerCase().includes('agile')) {
+      metadata.companySize = 'agil';
     } else {
-      metadata.teamSize = extractedTeamSize;
+      metadata.companySize = extractedCompanySize;
     }
   }
 
@@ -250,15 +253,15 @@ export function extractEnhancedMetadata(
   text: string,
 ): StructuredMetadata {
   // Try structured extraction first
-  const structured = extractStructuredMetadata($, html);
+  const structured = extractStructuredMetadata($);
   
   // If we got good results, return them
   if (Object.keys(structured).length > 0) {
-    // If structured extraction didn't find teamSize, try semantic extraction for it
-    if (!structured.teamSize) {
+    // If structured extraction didn't find companySize, try semantic extraction for it
+    if (!structured.companySize) {
       const semantic = extractSemanticMetadata($, text);
-      if (semantic.teamSize) {
-        structured.teamSize = semantic.teamSize;
+      if (semantic.companySize) {
+        structured.companySize = semantic.companySize;
       }
     }
     return structured;

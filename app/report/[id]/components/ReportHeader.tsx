@@ -2,13 +2,8 @@ import Link from "next/link";
 
 import { AppLogo } from "../../../components/AppLogo";
 
-import type { AnalysisHeader } from "../hooks/useAnalysisRecord";
 
-interface ReportHeaderProps {
-  header: AnalysisHeader;
-}
-
-export function ReportHeader({ header }: ReportHeaderProps) {
+export function ReportHeader() {
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="mx-auto max-w-5xl px-4 py-2">

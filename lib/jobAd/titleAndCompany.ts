@@ -105,7 +105,7 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-export function fallbackCompany(readable: ReadableContent) {
+export function fallbackCompany() {
   // Removed fragile regex pattern matching
   // If we can't extract company from structured data, the job ad is malformed
   return undefined;

@@ -16,7 +16,6 @@ import {
   extractDuration,
   extractLanguage,
   extractLocation,
-  extractMotto,
   extractPublishedAt,
   extractSize,
   normalizeLocationLabel,
@@ -50,7 +49,7 @@ export async function parseJobAd(
   const company =
     selectCompany($) ??
     guessCompanyFromUrl(options.sourceUrl) ??
-    fallbackCompany(readable);
+    fallbackCompany();
   if (!company) {
     throw new Error("Cannot extract company name from malformed job ad");
   }
@@ -88,7 +87,7 @@ export async function parseJobAd(
   const workload = structuredMetadata.workload || extractWorkload($, combinedText);
   const duration = structuredMetadata.duration || extractDuration($, combinedText);
   const language = structuredMetadata.language || extractLanguage($, combinedText);
-  const teamSize = structuredMetadata.teamSize;
+  const companySize = structuredMetadata.companySize;
 
   // Use shared filterEmptyValue utility
 
@@ -110,7 +109,7 @@ export async function parseJobAd(
     workload: filterEmptyValue(workload),
     duration: filterEmptyValue(duration),
     language: filterEmptyValue(language),
-    teamSize: filterEmptyValue(teamSize),
+    companySize: filterEmptyValue(companySize),
     fetchedAt: Date.now(),
     sourceDomain: options.sourceUrl ? new URL(options.sourceUrl).hostname : undefined,
   };

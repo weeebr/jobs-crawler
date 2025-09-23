@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { 
-  createBackgroundTask, 
-  getBackgroundTask, 
-  listActiveTasks, 
+import {
+  createBackgroundTask,
+  listActiveTasks,
   listAllTasks,
   cancelTask,
   cleanupOldTasks

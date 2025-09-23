@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { deleteAnalysis, getAnalysis } from "@/lib/analysisStore";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 
 interface Params {
   params: { id: string };
@@ -12,7 +12,7 @@ export function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
   
-  const record = getAnalysis(id);
+  const record = analysisStorage.get(id, "server");
   if (!record) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -30,7 +30,7 @@ export function DELETE(_request: Request, { params }: Params) {
   }
   
   console.log(`[api/analysis/${id}] Attempting to delete from server store`);
-  const removed = deleteAnalysis(id);
+  const removed = analysisStorage.remove(id, "server");
   console.log(`[api/analysis/${id}] Delete result:`, removed);
   
   if (!removed) {

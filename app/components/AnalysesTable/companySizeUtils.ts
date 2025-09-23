@@ -46,7 +46,7 @@ export function determineCompanySizeOptions(analyses: RecentAnalysisSummary[]): 
       continue;
     }
 
-    const bucketIndex = COMPANY_SIZE_BUCKETS.indexOf(bucket as any);
+    const bucketIndex = COMPANY_SIZE_BUCKETS.indexOf(bucket as (typeof COMPANY_SIZE_BUCKETS)[number]);
     if (bucketIndex > maxBucketIndex) {
       maxBucketIndex = bucketIndex;
     }

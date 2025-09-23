@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { persistAnalysisRecord, toSummary, loadRecentSummaries, persistRecentSummaries, type RecentAnalysisSummary } from "@/lib/clientStorage";
+import { toSummary, loadRecentSummaries, persistRecentSummaries, type RecentAnalysisSummary } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
 import type { BackgroundTask } from "@/lib/useBackgroundTasks";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 
 interface UseTaskProcessingOptions {
   tasks: BackgroundTask[];
@@ -71,7 +72,7 @@ export function useTaskProcessing({
         
         if (isComplete) {
           seen.add(result.id);
-          persistAnalysisRecord(result);
+          analysisStorage.save(result, "client");
           const summary = toSummary(result);
           freshSummaries.push(summary);
           

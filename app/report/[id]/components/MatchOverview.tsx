@@ -1,6 +1,5 @@
 import type { AnalysisHeader } from "../hooks/useAnalysisRecord";
 import type { AnalysisRecord } from "@/lib/types";
-import { DateWithTooltip } from "./helpers";
 import { sortTechStackByColor } from "@/lib/badgeUtils";
 import { formatPostedDate } from "@/lib/dateUtils";
 import { CompanyDisplay } from "./CompanyDisplay";

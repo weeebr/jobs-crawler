@@ -36,7 +36,7 @@ export default function ReportPage({ params }: ReportPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <ReportHeader header={header} />
+      <ReportHeader />
       <MatchOverview 
         header={header} 
         record={record} 

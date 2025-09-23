@@ -17,14 +17,14 @@ const analyzeRequestSchema = z.object({
   rawHtml: z.string().min(1, "rawHtml must not be empty").optional(),
   cv: cvProfileSchema.optional(),
   clearJobAdData: z.boolean().optional(),
-}).refine((data: any) => {
+}).refine((data: z.infer<typeof analyzeRequestSchema>) => {
   const hasSingle = Boolean(data.jobUrl || data.rawHtml);
   const hasSearch = Boolean(data.searchUrl);
   return hasSingle || hasSearch;
 }, {
   message: "Provide jobUrl, rawHtml, or searchUrl",
   path: ["jobUrl"],
-}).refine((data: any) => {
+}).refine((data: z.infer<typeof analyzeRequestSchema>) => {
   const hasSingle = Boolean(data.jobUrl || data.rawHtml);
   const hasSearch = Boolean(data.searchUrl);
   return !(hasSingle && hasSearch);

@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-import { clearAllData, persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
+import { clearAllData, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
 import { requireAnalysisRecords } from "@/lib/contractValidation";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 
 interface UseDataResetOptions {
   clearAllTasks: () => Promise<void>;
@@ -78,7 +79,7 @@ export function useDataReset({
         }
         
         const summaries = completeRecords.map((record) => {
-          persistAnalysisRecord(record);
+          analysisStorage.save(record, "client");
           return toSummary(record);
         });
         

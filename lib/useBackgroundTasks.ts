@@ -47,17 +47,6 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
   const streamHandler = createStreamMessageHandler();
   const taskOps = createTaskOperations();
 
-  const activeTasks = tasks.filter(task => task.status === 'running');
-
-  useEffect(() => {
-    loadTasks();
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.close();
-      }
-    };
-  }, []);
-
   const loadTasks = useCallback(async () => {
     try {
       const response = await fetch('/api/tasks');
@@ -70,6 +59,17 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
       console.warn('Failed to load tasks:', error);
     }
   }, []);
+
+  const activeTasks = tasks.filter(task => task.status === 'running');
+
+  useEffect(() => {
+    loadTasks();
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.close();
+      }
+    };
+  }, [loadTasks]);
 
   const startTask = useCallback(async (searchUrl: string, clearJobAdData?: boolean): Promise<BackgroundTask> => {
     taskOps.validateApiKey(options?.onError);
@@ -111,7 +111,7 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
     }
 
     return task;
-  }, [taskOps, streamHandler]);
+  }, [taskOps, streamHandler, options?.onError]);
 
   const cancelTask = useCallback(async (taskId: string): Promise<boolean> => {
     const success = await taskOps.cancelTask(taskId);

@@ -76,7 +76,7 @@ export function useLetterManager({
       setActiveLanguage((current) => current ?? available[0]);
     }
     setLetterError(null);
-  }, [record?.id]);
+  }, [record]);
 
   useEffect(() => {
     return () => {

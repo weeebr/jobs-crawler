@@ -227,6 +227,8 @@ body {
     padding: 0;
     margin: 0;
     scrollbar-gutter: stable;
+    /* Fallback for Safari */
+    scrollbar-gutter: auto;
     /* Prevent horizontal overflow */
     overflow-x: hidden;
     box-sizing: border-box;
@@ -414,6 +416,8 @@ body {
   /* Main container with stable scrollbar */
   .main-container {
     scrollbar-gutter: stable;
+    /* Fallback for Safari */
+    scrollbar-gutter: auto;
   }
 }
 
@@ -436,6 +440,7 @@ body {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .line-clamp-2 {
@@ -443,6 +448,7 @@ body {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .line-clamp-3 {
@@ -450,9 +456,25 @@ body {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 /* Progress bar with data attribute */
 [data-progress] {
   width: calc(var(--progress-width, 0) * 1%);
+}
+
+/* Safari fallbacks for scrollbar-gutter */
+@supports not (scrollbar-gutter: stable) {
+  body {
+    padding-right: 0;
+  }
+  
+  .filter-grid {
+    scrollbar-gutter: auto;
+  }
+  
+  .main-container {
+    scrollbar-gutter: auto;
+  }
 }

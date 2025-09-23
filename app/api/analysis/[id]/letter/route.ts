@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAnalysis, saveAnalysis } from "@/lib/analysisStore";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 import { compareCv } from "@/lib/compareCv";
 import { generateMotivationLetter } from "@/lib/generateMotivationLetter";
 
@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
 
-  const record = getAnalysis(id);
+  const record = analysisStorage.get(id, "server");
   if (!record) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -65,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
     generatedAt: Date.now(),
   } as const;
 
-  const updatedRecord = saveAnalysis({
+  analysisStorage.save({
     ...record,
     llmAnalysis: {
       ...record.llmAnalysis,
@@ -75,7 +75,7 @@ export async function POST(request: Request, { params }: Params) {
       },
     },
     updatedAt: Date.now(),
-  });
+  }, "server");
 
   console.info(
     `[api/analysis/${params.id}/letter] generated letter (${language}) source=${result.source}`,

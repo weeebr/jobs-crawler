@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-import { loadRecentSummaries, persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
+import { loadRecentSummaries, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
 import { requireAnalysisRecords } from "@/lib/contractValidation";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 import type { BackgroundTask } from "@/lib/useBackgroundTasks";
 
 const MAX_RECENT_ANALYSES = 50;
@@ -57,7 +58,7 @@ export function useDataRefresh({
         }
 
         const summaries = completeRecords.map((record) => {
-          persistAnalysisRecord(record);
+          analysisStorage.save(record, "client");
           return toSummary(record);
         });
 

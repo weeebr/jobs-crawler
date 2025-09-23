@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { processJobSearchStream } from "@/lib/streaming/streamProcessor";
 import { createErrorResponse } from "@/lib/streaming/streamUtils";
-import { cvProfileSchema, type CVProfile } from "@/lib/schemas";
+import { cvProfileSchema } from "@/lib/schemas";
 
 const streamRequestSchema = z.object({
   searchUrl: z.string().url('searchUrl must be a valid URL'),

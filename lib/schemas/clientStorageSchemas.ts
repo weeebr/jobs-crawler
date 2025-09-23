@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { baseJobDataSchema } from "./jobSchemas";
-import { idFieldSchema, metadataFieldsSchema, matchScoreFieldSchema } from "./commonSchemas";
+import { idFieldSchema, metadataFieldsSchema } from "./commonSchemas";
 
 // Client storage schemas
 export const recentAnalysisSummarySchema = baseJobDataSchema.merge(idFieldSchema).merge(metadataFieldsSchema).extend({
@@ -20,7 +20,7 @@ export const filterStateSchema = z.object({
   location: z.string().default('all'),
   tech: z.string().default('all'),
   status: z.union([z.literal('all'), analysisStatusSchema]).default('all'),
-  sort: z.enum(['newest', 'oldest', 'score-high', 'score-low']).default('newest'),
+  sort: z.enum(['posting-newest', 'posting-oldest', 'score-high', 'score-low']).default('posting-newest'),
   search: z.string().default(''),
 });
 

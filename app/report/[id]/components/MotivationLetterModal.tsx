@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { LetterLanguage } from "@/lib/generateMotivationLetter";
 import type { LetterView } from "../hooks/useLetterManager";
 import { languageLabel, letterSourceLabel } from "./helpers";

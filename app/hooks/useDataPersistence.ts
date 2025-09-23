@@ -2,18 +2,15 @@
 
 import { useCallback } from "react";
 import {
-  clearAllData,
   loadRecentSummaries,
-  persistAnalysisRecord,
   persistAnalysisStatuses,
   persistRecentSummaries,
-  removeAnalysisRecord,
   toSummary,
   type AnalysisStatus,
-  type RecentAnalysisSummary,
 } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
 import type { AnalysisRecord } from "@/lib/types";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 
 interface UseDataPersistenceOptions {
   statuses: Record<number, AnalysisStatus>;
@@ -51,8 +48,8 @@ export function useDataPersistence({ statuses, forceRefresh }: UseDataPersistenc
         throw new Error(`Delete failed (${response.status})`);
       }
 
-      console.log('[useDataPersistence] removing analysis record from localStorage');
-      removeAnalysisRecord(id);
+      console.log('[useDataPersistence] removing analysis record via unified storage handler');
+      analysisStorage.remove(id, "client");
       
       // Update recent summaries to remove the deleted analysis
       const currentRecent = loadRecentSummaries();
@@ -86,7 +83,7 @@ export function useDataPersistence({ statuses, forceRefresh }: UseDataPersistenc
   const persistCompleteAnalyses = useCallback((records: AnalysisRecord[]) => {
     const completeRecords = records.filter(isAnalysisComplete);
     const summaries = completeRecords.map((record) => {
-      persistAnalysisRecord(record);
+      analysisStorage.save(record, "client");
       return toSummary(record);
     });
     

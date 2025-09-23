@@ -1,7 +1,7 @@
 "use client";
 
 import type { AnalysisRecord } from "./types";
-import { persistAnalysisRecord } from "./clientStorage";
+import { analysisStorage } from "./analysisStorageHandler";
 import { safeParseAnalysisRecord } from "./contractValidation";
 
 export interface StreamMessageHandler {
@@ -36,7 +36,7 @@ export function createStreamMessageHandler(): StreamMessageHandler {
           break;
         }
 
-        persistAnalysisRecord(parsedRecord);
+        analysisStorage.save(parsedRecord, "client");
         
         setTasks(prev => {
           const updated = prev.map(task => 

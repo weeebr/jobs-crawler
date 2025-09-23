@@ -135,15 +135,25 @@ export function filterAndSortAnalyses(
 
   return filtered.sort((a, b) => {
     switch (filters.sort) {
-      case "oldest":
-        return a.createdAt - b.createdAt;
       case "score-high":
         return roundMatchScore(b.matchScore) - roundMatchScore(a.matchScore);
       case "score-low":
         return roundMatchScore(a.matchScore) - roundMatchScore(b.matchScore);
-      case "newest":
+      case "posting-newest":
+        // Sort by posting date (newest first), fallback to createdAt if no posting date
+        const aPostingDate = a.publishedAt ? new Date(a.publishedAt).getTime() : a.createdAt;
+        const bPostingDate = b.publishedAt ? new Date(b.publishedAt).getTime() : b.createdAt;
+        return bPostingDate - aPostingDate;
+      case "posting-oldest":
+        // Sort by posting date (oldest first), fallback to createdAt if no posting date
+        const aPostingDateOld = a.publishedAt ? new Date(a.publishedAt).getTime() : a.createdAt;
+        const bPostingDateOld = b.publishedAt ? new Date(b.publishedAt).getTime() : b.createdAt;
+        return aPostingDateOld - bPostingDateOld;
       default:
-        return b.createdAt - a.createdAt;
+        // Default to posting-newest behavior
+        const aDefaultDate = a.publishedAt ? new Date(a.publishedAt).getTime() : a.createdAt;
+        const bDefaultDate = b.publishedAt ? new Date(b.publishedAt).getTime() : b.createdAt;
+        return bDefaultDate - aDefaultDate;
     }
   });
 }

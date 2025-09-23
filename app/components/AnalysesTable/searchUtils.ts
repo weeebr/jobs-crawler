@@ -31,7 +31,7 @@ export interface SearchableAnalysis {
   motto?: string;
   workload?: string;
   duration?: string;
-  teamSize?: string;
+  companySize?: string;
 }
 
 export function createSearchableData(analyses: RecentAnalysisSummary[]): SearchableAnalysis[] {
@@ -53,7 +53,7 @@ export function createSearchableData(analyses: RecentAnalysisSummary[]): Searcha
       motto: fullRecord?.job.motto,
       workload: summary.workload,
       duration: summary.duration,
-      teamSize: summary.teamSize,
+      companySize: summary.companySize,
     };
   });
 }

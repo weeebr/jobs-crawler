@@ -39,7 +39,7 @@ export default function HomePage() {
   } = useAnalysisData();
 
 
-  const { aggregatedProgress, progressLabel, showLoadingBar, progressBarRef } = 
+  const { aggregatedProgress, progressLabel, showLoadingBar, progressBarRef } =
     useProgressTracking(activeTasks, isPending, isStreaming);
 
   const canSubmit = jobUrl.trim().length > 0;

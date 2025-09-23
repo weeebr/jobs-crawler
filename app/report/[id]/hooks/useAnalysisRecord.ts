@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import {
   loadAnalysisRecord,
   loadRecentSummaries,
-  persistAnalysisRecord,
   persistRecentSummaries,
   toSummary,
   type RecentAnalysisSummary,
 } from "@/lib/clientStorage";
 import type { AnalysisRecord } from "@/lib/types";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 
 type Status = "loading" | "ready" | "missing" | "error";
 
@@ -20,7 +20,7 @@ interface AnalysisHeader {
   location?: string | null;
   workload?: string | null;
   duration?: string | null;
-  teamSize?: string | null;
+  companySize?: string | null;
   publishedAt?: string | null;
 }
 
@@ -78,7 +78,7 @@ export function useAnalysisRecord(id: string): UseAnalysisRecordResult {
         }
 
         const remoteRecord = (await response.json()) as AnalysisRecord;
-        persistAnalysisRecord(remoteRecord);
+        analysisStorage.save(remoteRecord, "client");
         syncRecent(remoteRecord);
         if (ignore) return;
         setRecord(remoteRecord);
@@ -109,7 +109,7 @@ export function useAnalysisRecord(id: string): UseAnalysisRecordResult {
       publishedAt: record.job.publishedAt,
       workload: record.job.workload,
       duration: record.job.duration,
-      teamSize: record.job.teamSize,
+      companySize: record.job.companySize,
     } satisfies AnalysisHeader;
   }, [record]);
 

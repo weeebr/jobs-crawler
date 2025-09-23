@@ -1,5 +1,4 @@
-import type { 
-  AnalysisRecord, 
+import type {
   RecentAnalysisSummary,
   AnalysisStatus,
   FilterState
@@ -22,7 +21,7 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   location: "all",
   tech: "all",
   status: "all",
-  sort: "newest",
+  sort: "posting-newest",
   search: "",
 };
 

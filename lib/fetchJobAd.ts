@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { withRetry, withTimeout } from "./retryUtils";
+import { withRetry } from "./retryUtils";
 import { extractErrorMessage } from "./apiUtils";
 
 export interface FetchJobAdOptions {
