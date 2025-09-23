@@ -21,6 +21,7 @@ export const filterStateSchema = z.object({
   tech: z.string().default('all'),
   status: z.union([z.literal('all'), analysisStatusSchema]).default('all'),
   sort: z.enum(['newest', 'oldest', 'score-high', 'score-low']).default('newest'),
+  search: z.string().default(''),
 });
 
 export type FilterState = z.infer<typeof filterStateSchema>;

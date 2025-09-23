@@ -9,6 +9,7 @@ import { TechBadge } from "@/app/components/TechBadge";
 interface AnalysisCardProps {
   analysis: RecentAnalysisSummary;
   status: AnalysisStatus;
+  isNew?: boolean;
 }
 
 function formatRelativeDate(dateString: string): string {
@@ -37,7 +38,7 @@ function getMatchScoreClass(score: number): string {
   return 'match-score-poor';
 }
 
-export function AnalysisCard({ analysis, status }: AnalysisCardProps) {
+export function AnalysisCard({ analysis, status, isNew = false }: AnalysisCardProps) {
   const displayScore = roundMatchScore(analysis.matchScore);
 
   const handleStatusToggle = (newStatus: AnalysisStatus) => {
@@ -67,9 +68,17 @@ export function AnalysisCard({ analysis, status }: AnalysisCardProps) {
         {/* Header with Job Title and Company */}
         <div className="flex items-start">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-1 line-clamp-1 group-hover:text-accent-600 transition-colors">
-              {analysis.title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-1 line-clamp-1 group-hover:text-accent-600 transition-colors">
+                {analysis.title}
+              </h3>
+              {isNew && (
+                <span className="inline-flex items-center" aria-hidden="true">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                </span>
+              )}
+              {isNew && <span className="sr-only">New analysis</span>}
+            </div>
             <p className="text-neutral-600 font-medium">{analysis.company}</p>
           </div>
         </div>

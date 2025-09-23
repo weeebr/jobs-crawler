@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AnalysisStatus, FilterState } from "@/lib/clientStorage";
 import { loadFilterState, persistFilterState } from "@/lib/clientStorage";
 
@@ -9,6 +9,7 @@ import { EmptyState } from "./AnalysesTable/EmptyState";
 import { FilterControls } from "./AnalysesTable/FilterControls";
 import type { AnalysesTableProps } from "./AnalysesTable/types";
 import { deriveDynamicOptions, filterAndSortAnalyses } from "./AnalysesTable/filterUtils";
+import { loadSeenAnalysisIds, persistSeenAnalysisIds } from "@/lib/clientStorage/seenAnalyses";
 
 export function AnalysesTable({
   analyses,
@@ -16,6 +17,8 @@ export function AnalysesTable({
 }: AnalysesTableProps) {
   const [filters, setFilters] = useState<FilterState>(() => loadFilterState());
   const [showFilters, setShowFilters] = useState(false);
+  const seenIdsRef = useRef<Set<number>>(loadSeenAnalysisIds());
+  const [freshIds, setFreshIds] = useState<Set<number>>(new Set<number>());
 
   const dynamicOptions = useMemo(
     () => deriveDynamicOptions(analyses),
@@ -53,6 +56,32 @@ export function AnalysesTable({
       filters,
     );
   }, [filteredAnalyses.length, analyses.length, filters]);
+
+  useEffect(() => {
+    if (analyses.length === 0) {
+      return;
+    }
+
+    const currentSeen = seenIdsRef.current;
+    const newIds = analyses
+      .map((analysis) => analysis.id)
+      .filter((id) => !currentSeen.has(id));
+
+    if (newIds.length === 0) {
+      return;
+    }
+
+    setFreshIds((prev) => {
+      const next = new Set(prev);
+      newIds.forEach((id) => next.add(id));
+      return next;
+    });
+
+    const updatedSeen = new Set(currentSeen);
+    newIds.forEach((id) => updatedSeen.add(id));
+    seenIdsRef.current = updatedSeen;
+    persistSeenAnalysisIds(updatedSeen);
+  }, [analyses]);
 
   if (analyses.length === 0) {
     return <EmptyState type="no-analyses" />;
@@ -109,6 +138,7 @@ export function AnalysesTable({
                 key={analysis.id}
                 analysis={analysis}
                 status={status}
+                isNew={freshIds.has(analysis.id)}
               />
             );
           })}

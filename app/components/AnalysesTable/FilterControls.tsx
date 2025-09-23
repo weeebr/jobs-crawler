@@ -11,7 +11,7 @@ interface FilterControlsProps {
 
 export function FilterControls({ filters, dynamicOptions, onFilterChange, isVisible }: FilterControlsProps) {
   return (
-    <div className="w-full max-w-full overflow-hidden">
+    <div className="w-full">
       <div className={`filter-grid transition-all duration-300 ${
         isVisible ? 'opacity-100 max-h-96' : 'opacity-0 h-0 overflow-hidden'
       }`}>
@@ -112,6 +112,18 @@ export function FilterControls({ filters, dynamicOptions, onFilterChange, isVisi
             </option>
           ))}
         </select>
+      </div>
+      
+      <div className="col-span-full">
+        <label className="block text-sm font-medium text-neutral-700 mb-2">Search</label>
+        <input
+          type="text"
+          value={filters.search}
+          onChange={(event) => onFilterChange('search', event.target.value)}
+          placeholder="Search job titles, companies, technologies, benefits, qualifications..."
+          className="input-field text-sm w-full"
+          title="Search across job titles, companies, technologies, benefits, qualifications, and more"
+        />
       </div>
       </div>
     </div>

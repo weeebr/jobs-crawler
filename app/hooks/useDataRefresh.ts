@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback } from "react";
-import { persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
+import { loadRecentSummaries, persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
 import type { AnalysisRecord } from "@/lib/types";
 import type { BackgroundTask } from "@/lib/useBackgroundTasks";
+
+const MAX_RECENT_ANALYSES = 50;
 
 interface UseDataRefreshOptions {
   clearAllTasks: (options?: { preserveAnalyses?: boolean }) => Promise<void>;
@@ -58,7 +60,22 @@ export function useDataRefresh({
           return toSummary(record);
         });
 
-        persistRecentSummaries(summaries);
+        const existingSummaries = loadRecentSummaries();
+        const mergedSummariesMap = new Map<number, ReturnType<typeof toSummary>>();
+
+        for (const summary of existingSummaries) {
+          mergedSummariesMap.set(summary.id, summary);
+        }
+
+        for (const summary of summaries) {
+          mergedSummariesMap.set(summary.id, summary);
+        }
+
+        const mergedSummaries = Array.from(mergedSummariesMap.values())
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .slice(0, MAX_RECENT_ANALYSES);
+
+        persistRecentSummaries(mergedSummaries);
         forceRefresh();
         console.info(`[data-refresh] synchronized ${summaries.length} complete analyses`);
       } else {

@@ -126,8 +126,28 @@ body {
   }
 
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-300 transition-colors duration-200;
     min-width: 0; /* Allow flex items to shrink */
+    /* Ensure focus ring stays within bounds */
+    box-sizing: border-box;
+  }
+  
+  /* Standardize focus styles for all form elements */
+  select.input-field,
+  input.input-field {
+    @apply focus:ring-1 focus:ring-blue-400 focus:border-blue-300;
+    /* Prevent focus ring from extending beyond container */
+    box-sizing: border-box;
+  }
+  
+  /* Custom contained focus style for filter controls */
+  .filter-grid .input-field:focus {
+    @apply outline-none border-blue-300;
+    /* Use box-shadow instead of ring for better containment */
+    box-shadow: inset 0 0 0 1px #60a5fa;
+    /* Ensure no overflow */
+    position: relative;
+    z-index: 1;
   }
 
   .badge {
@@ -201,12 +221,25 @@ body {
 
   /* Filter controls grid - prevent horizontal overflow */
   .filter-grid {
-    @apply grid gap-4 w-full max-w-full;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    @apply grid gap-4 w-full;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     /* Ensure content doesn't get overlapped by scrollbar */
-    padding-right: 0;
-    margin-right: 0;
+    padding: 0;
+    margin: 0;
     scrollbar-gutter: stable;
+    /* Prevent horizontal overflow */
+    overflow-x: hidden;
+    box-sizing: border-box;
+    /* Contain focus rings within grid cells */
+    contain: layout;
+  }
+  
+  /* Ensure grid cells contain their focus rings */
+  .filter-grid > div {
+    @apply relative;
+    /* Prevent focus rings from bleeding out */
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   @media (min-width: 640px) {
@@ -369,13 +402,13 @@ body {
   
   /* Fix scrollbar overlap on mobile */
   .filter-grid {
-    @apply pr-2; /* Add padding to account for scrollbar */
+    @apply px-2; /* Add padding on both sides to prevent cutoff */
   }
   
   /* Ensure main content doesn't get overlapped */
   .space-y-4,
   .space-y-6 {
-    @apply pr-2; /* Add padding to account for scrollbar */
+    @apply px-2; /* Add padding on both sides to prevent cutoff */
   }
   
   /* Main container with stable scrollbar */

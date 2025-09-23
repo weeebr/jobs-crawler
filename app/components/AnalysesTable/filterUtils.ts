@@ -2,6 +2,7 @@ import type { RecentAnalysisSummary, FilterState } from "@/lib/clientStorage";
 import type { AnalysisStatus } from "@/lib/clientStorage";
 import type { DynamicOptions } from "./types";
 import { roundMatchScore } from "@/lib/matchScore";
+import { createFuzzySearch } from "./searchUtils";
 
 export function isValidLocationForFilter(text: string): boolean {
   const trimmed = text.trim();
@@ -87,6 +88,7 @@ export function deriveDynamicOptions(analyses: RecentAnalysisSummary[]): Dynamic
   };
 }
 
+
 export function filterAndSortAnalyses(
   analyses: RecentAnalysisSummary[],
   filters: FilterState,
@@ -94,7 +96,16 @@ export function filterAndSortAnalyses(
 ): RecentAnalysisSummary[] {
   const minScore = filters.score === "all" ? 0 : Number.parseInt(filters.score, 10);
 
-  const filtered = analyses.filter((item) => {
+  // Apply fuzzy search if search term is provided
+  let searchResults = analyses;
+  if (filters.search && filters.search.trim().length > 0) {
+    const fuse = createFuzzySearch(analyses);
+    const searchResults_raw = fuse.search(filters.search.trim());
+    const searchResultIds = new Set(searchResults_raw.map(result => result.item.id));
+    searchResults = analyses.filter(analysis => searchResultIds.has(analysis.id));
+  }
+
+  const filtered = searchResults.filter((item) => {
     const roundedScore = roundMatchScore(item.matchScore);
 
     if (filters.status !== "all") {
