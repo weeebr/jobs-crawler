@@ -35,7 +35,7 @@ export function compareCv(job: JobAdParsed, cv: CVProfile): ComparisonResult {
 
   const keywordScore = calculateKeywordScore(job, cv.keywords);
   const experienceScore = calculateExperienceScore(cv);
-  const environmentScore = calculateEnvironmentScore(job, cv);
+  const environmentScore = calculateEnvironmentScore(job);
 
   const rawScore = coverageScore + keywordScore + experienceScore + environmentScore;
   const matchScore = roundMatchScore(rawScore);
@@ -46,9 +46,7 @@ export function compareCv(job: JobAdParsed, cv: CVProfile): ComparisonResult {
 
   const reasoning = generateReasoning({
     stackCoverage: intersection / Math.max(jobStackSet.size, 1),
-    experienceScore,
     environmentScore,
-    keywordScore,
     gaps,
     job,
     cv,
@@ -116,7 +114,7 @@ function intersectionSize(setA: Set<string>, setB: Set<string>) {
 }
 
 function calculateExperienceScore(cv: CVProfile): number {
-  const totalYears = cv.roles.reduce((sum: number, role) => sum + (role.years || 0), 0);
+  const totalYears = cv.roles.reduce((sum: number, role: { years?: number }) => sum + (role.years || 0), 0);
   const avgYears = cv.roles.length > 0 ? totalYears / cv.roles.length : 0;
   
   // Score based on years of experience
@@ -126,7 +124,7 @@ function calculateExperienceScore(cv: CVProfile): number {
   return EXPERIENCE_WEIGHT * 0.3;
 }
 
-function calculateEnvironmentScore(job: JobAdParsed, cv: CVProfile): number {
+function calculateEnvironmentScore(job: JobAdParsed): number {
   let score = 0;
   
   // Check for company size preference (small companies, startups)
@@ -161,17 +159,13 @@ function calculateEnvironmentScore(job: JobAdParsed, cv: CVProfile): number {
 
 function generateReasoning({
   stackCoverage,
-  experienceScore,
   environmentScore,
-  keywordScore,
   gaps,
   job,
   cv,
 }: {
   stackCoverage: number;
-  experienceScore: number;
   environmentScore: number;
-  keywordScore: number;
   gaps: string[];
   job: JobAdParsed;
   cv: CVProfile;
@@ -188,7 +182,7 @@ function generateReasoning({
   }
   
   // Experience level
-  const totalYears = cv.roles.reduce((sum: number, role) => sum + (role.years || 0), 0);
+  const totalYears = cv.roles.reduce((sum: number, role: { years?: number }) => sum + (role.years || 0), 0);
   if (totalYears >= 5) {
     reasoning.push(`✓ ${totalYears}+ years experience`);
   } else if (totalYears >= 2) {

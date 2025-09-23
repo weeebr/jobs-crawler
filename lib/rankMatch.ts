@@ -145,11 +145,11 @@ function formatJob(job: JobAdParsed): string {
 }
 
 function formatCv(cv: CVProfile): string {
-  const roleSummaries = cv.roles.slice(0, 4).map((role) => {
+  const roleSummaries = cv.roles.slice(0, 4).map((role: any) => {
     const stack = role.stack.slice(0, 8).join(", ") || "(no stack listed)";
     return `${role.title} — stack: ${stack}${typeof role.years === "number" ? ` (${role.years}y)` : ""}`;
   });
-  const projects = cv.projects.slice(0, 3).map((project) => {
+  const projects = cv.projects.slice(0, 3).map((project: any) => {
     const stack = project.stack.slice(0, 6).join(", ") || "(no stack listed)";
     return `${project.name}: ${stack}${project.impact ? ` — ${project.impact}` : ""}`;
   });

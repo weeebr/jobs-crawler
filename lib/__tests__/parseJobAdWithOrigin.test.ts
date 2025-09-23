@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { parseJobAd } from '../parseJobAd';
-import type { JobAdParsed } from '../schemas';
+import type { JobAdFetched } from '../schemas';
 
 // Mock the motto extraction
 vi.mock('../jobAd/metadata/mottoLLM', () => ({

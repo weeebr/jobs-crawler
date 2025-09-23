@@ -86,7 +86,8 @@ describe("2-Stage Workflow Error Handling", () => {
       jobLinks: [
         "https://jobs.ch/vacancies/detail/job1",
         "https://jobs.ch/vacancies/detail/job2"
-      ]
+      ],
+      fetchedPages: 1
     });
 
     fetchJobAdMock
@@ -114,7 +115,8 @@ describe("2-Stage Workflow Error Handling", () => {
   it("should handle empty search results gracefully", async () => {
     // Stage 1: Mock empty search results
     collectJobLinksMock.mockResolvedValue({
-      jobLinks: []
+      jobLinks: [],
+      fetchedPages: 0
     });
 
     await expect(
@@ -129,7 +131,8 @@ describe("2-Stage Workflow Error Handling", () => {
   it("should handle all job analysis failures", async () => {
     // Stage 1: Mock successful job URL collection
     collectJobLinksMock.mockResolvedValue({
-      jobLinks: ["https://jobs.ch/vacancies/detail/job1"]
+      jobLinks: ["https://jobs.ch/vacancies/detail/job1"],
+      fetchedPages: 1
     });
 
     fetchJobAdMock.mockResolvedValueOnce("<html>job page 1</html>");

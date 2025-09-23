@@ -5,7 +5,6 @@ import {
   createMockJob, 
   createMockAnalysis,
   fetchJobAdMock,
-  extractJobLinksMock,
   parseJobAdMock,
   compareCvMock,
   rankMatchScoreMock,
@@ -88,7 +87,8 @@ describe("2-Stage Workflow Integration", () => {
       jobLinks: [
         "https://jobs.ch/vacancies/detail/job1",
         "https://jobs.ch/vacancies/detail/job2"
-      ]
+      ],
+      fetchedPages: 1
     });
 
     fetchJobAdMock

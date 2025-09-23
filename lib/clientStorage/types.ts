@@ -1,6 +1,5 @@
 import type { 
   AnalysisRecord, 
-  LegacyAnalysisRecord,
   RecentAnalysisSummary,
   AnalysisStatus,
   FilterState

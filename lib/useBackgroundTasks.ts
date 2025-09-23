@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { AnalysisRecord } from "./types";
 import { createStreamMessageHandler } from "./streamHandlers";
-import { createTaskOperations } from "./taskOperations";
+import { createTaskOperations, type ClearAllTasksOptions } from "./taskOperations";
 
 export interface BackgroundTask {
   id: string;
@@ -28,7 +28,7 @@ interface UseBackgroundTasksReturn {
   activeTasks: BackgroundTask[];
   startTask: (searchUrl: string) => Promise<BackgroundTask>;
   cancelTask: (taskId: string) => Promise<boolean>;
-  clearAllTasks: () => Promise<void>;
+  clearAllTasks: (options?: ClearAllTasksOptions) => Promise<void>;
   isStreaming: boolean;
   currentStream: EventSource | null;
 }
@@ -123,13 +123,13 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
     return success;
   }, [taskOps]);
 
-  const clearAllTasks = useCallback(async () => {
+  const clearAllTasks = useCallback(async (options?: ClearAllTasksOptions) => {
     if (streamRef.current) {
       streamRef.current.close();
       streamRef.current = null;
     }
     
-    await taskOps.clearAllTasks(tasks);
+    await taskOps.clearAllTasks(tasks, options);
     setTasks([]);
     setIsStreaming(false);
     setCurrentStream(null);

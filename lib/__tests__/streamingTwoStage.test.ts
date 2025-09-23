@@ -1,15 +1,24 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { processJobLinksInParallel } from "@/lib/streaming/parallelProcessor";
-import { analyzeSingleJob } from "@/lib/streaming/jobAnalysis";
 import { addTaskResult, addTaskError } from "@/lib/backgroundTasks";
 import { getExistingJobUrls } from "@/lib/clientStorage/core";
-import type { CVProfile } from "@/lib/schemas";
-import type { AnalysisRecord } from "@/lib/types";
+import { 
+  createMockCvProfile, 
+  createMockAnalysisRecord, 
+  createMockJobLinks,
+  createMockMessageCollector,
+  createMockIsClosed
+} from "./testUtils/streamingTestUtils";
 
 // Mock dependencies
-vi.mock("@/lib/streaming/jobAnalysis");
+vi.mock("@/lib/streaming/jobAnalysis", () => ({
+  analyzeSingleJob: vi.fn()
+}));
 vi.mock("@/lib/backgroundTasks");
 vi.mock("@/lib/clientStorage/core");
+
+// Import after mocking
+import { processJobLinksInParallel } from "@/lib/streaming/parallelProcessor";
+import { analyzeSingleJob } from "@/lib/streaming/jobAnalysis";
 
 const analyzeSingleJobMock = vi.mocked(analyzeSingleJob);
 const addTaskResultMock = vi.mocked(addTaskResult);
@@ -17,38 +26,8 @@ const addTaskErrorMock = vi.mocked(addTaskError);
 const getExistingJobUrlsMock = vi.mocked(getExistingJobUrls);
 
 describe("Streaming 2-Stage Processing - Critical Workflow", () => {
-  const mockCvProfile: CVProfile = {
-    roles: [{ title: "Developer", stack: ["React", "TypeScript"] }],
-    skills: ["JavaScript", "React"],
-    projects: [],
-    education: [],
-    keywords: []
-  };
-
-  const mockAnalysisRecord: AnalysisRecord = {
-    id: 123,
-    job: {
-      title: "Test Job",
-      company: "Test Company",
-      stack: ["React", "TypeScript"],
-      qualifications: ["3+ years experience"],
-      roles: ["Frontend Developer"],
-      benefits: ["Remote work"],
-      fetchedAt: Date.now(),
-      sourceDomain: "example.com"
-    },
-    cv: mockCvProfile,
-    llmAnalysis: {
-      matchScore: 80,
-      reasoning: ["Strong technical match"],
-      letters: {},
-      analyzedAt: Date.now(),
-      analysisVersion: "1.0"
-    },
-    userInteractions: { interactionCount: 0 },
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  };
+  const mockCvProfile = createMockCvProfile();
+  const mockAnalysisRecord = createMockAnalysisRecord();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,20 +35,9 @@ describe("Streaming 2-Stage Processing - Critical Workflow", () => {
   });
 
   it("should process job links in parallel batches with progress updates", async () => {
-    const jobLinks = [
-      "https://jobs.ch/vacancies/detail/job1",
-      "https://jobs.ch/vacancies/detail/job2",
-      "https://jobs.ch/vacancies/detail/job3",
-      "https://jobs.ch/vacancies/detail/job4",
-      "https://jobs.ch/vacancies/detail/job5"
-    ];
-
-    const messages: Array<{ type: string; data: any }> = [];
-    const sendMessage = (type: string, data: any) => {
-      messages.push({ type, data });
-    };
-
-    const isClosed = () => false;
+    const jobLinks = createMockJobLinks();
+    const { messages, sendMessage } = createMockMessageCollector();
+    const isClosed = createMockIsClosed(10); // Don't close early
 
     // Mock successful job analysis
     analyzeSingleJobMock.mockResolvedValue(mockAnalysisRecord);
@@ -107,12 +75,8 @@ describe("Streaming 2-Stage Processing - Critical Workflow", () => {
       "https://jobs.ch/vacancies/detail/job1"
     ]));
 
-    const messages: Array<{ type: string; data: any }> = [];
-    const sendMessage = (type: string, data: any) => {
-      messages.push({ type, data });
-    };
-
-    const isClosed = () => false;
+    const { messages, sendMessage } = createMockMessageCollector();
+    const isClosed = createMockIsClosed(10); // Don't close early
 
     const result = await processJobLinksInParallel(
       jobLinks,
@@ -133,7 +97,7 @@ describe("Streaming 2-Stage Processing - Critical Workflow", () => {
     );
 
     // Verify skip messages
-    const skipMessages = messages.filter(m => m.type === 'progress' && m.data.skipped);
+    const skipMessages = messages.filter(m => m.type === 'progress' && m.data.message.includes('Skipping'));
     expect(skipMessages).toHaveLength(1);
   });
 
@@ -144,12 +108,8 @@ describe("Streaming 2-Stage Processing - Critical Workflow", () => {
       "https://jobs.ch/vacancies/detail/job3"
     ];
 
-    const messages: Array<{ type: string; data: any }> = [];
-    const sendMessage = (type: string, data: any) => {
-      messages.push({ type, data });
-    };
-
-    const isClosed = () => false;
+    const { messages, sendMessage } = createMockMessageCollector();
+    const isClosed = createMockIsClosed(10); // Don't close early
 
     // Mock mixed success/failure
     analyzeSingleJobMock
@@ -188,16 +148,8 @@ describe("Streaming 2-Stage Processing - Critical Workflow", () => {
       "https://jobs.ch/vacancies/detail/job3"
     ];
 
-    const messages: Array<{ type: string; data: any }> = [];
-    const sendMessage = (type: string, data: any) => {
-      messages.push({ type, data });
-    };
-
-    let callCount = 0;
-    const isClosed = () => {
-      callCount++;
-      return callCount > 1; // Close after first batch
-    };
+    const { messages, sendMessage } = createMockMessageCollector();
+    const isClosed = createMockIsClosed(1); // Close after first batch
 
     // Mock successful job analysis
     analyzeSingleJobMock.mockResolvedValue(mockAnalysisRecord);
@@ -223,12 +175,8 @@ describe("Streaming 2-Stage Processing - Critical Workflow", () => {
       "https://jobs.ch/vacancies/detail/job3"
     ];
 
-    const messages: Array<{ type: string; data: any }> = [];
-    const sendMessage = (type: string, data: any) => {
-      messages.push({ type, data });
-    };
-
-    const isClosed = () => false;
+    const { messages, sendMessage } = createMockMessageCollector();
+    const isClosed = createMockIsClosed(10); // Don't close early
 
     // Mock one failure in batch
     analyzeSingleJobMock

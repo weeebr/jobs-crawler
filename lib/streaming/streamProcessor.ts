@@ -1,22 +1,21 @@
 import { NextRequest } from "next/server";
 import { loadDefaultCv } from "@/lib/defaultCv";
-import { 
-  updateTaskProgress, 
-  addTaskResult, 
-  addTaskError, 
+import {
+  updateTaskProgress,
+  addTaskResult,
+  addTaskError,
   completeTask,
-  getBackgroundTask,
-  isTaskCancelled,
-  getTaskAbortController
+  getTaskAbortController,
 } from "@/lib/backgroundTasks";
 import { collectJobLinksWithProgress } from "./jobLinkCollector";
 import { processJobLinksInParallel } from "./parallelProcessor";
 import { createSSEMessage } from "./streamUtils";
 import type { CVProfile } from "@/lib/schemas";
 import type { AnalysisRecord } from "@/lib/types";
+import { JOB_PIPELINE_DEFAULTS } from "@/lib/jobPipeline";
 
-const FETCH_TIMEOUT_MS = 6_000;
-const FETCH_RETRY_COUNT = 1;
+const FETCH_TIMEOUT_MS = JOB_PIPELINE_DEFAULTS.timeoutMs;
+const FETCH_RETRY_COUNT = JOB_PIPELINE_DEFAULTS.retryCount;
 
 export async function processJobSearchStream(
   request: NextRequest,
@@ -169,4 +168,3 @@ export async function processJobSearchStream(
 
   return stream;
 }
-

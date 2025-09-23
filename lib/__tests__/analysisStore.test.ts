@@ -6,7 +6,10 @@ import {
   deleteAnalysis,
   clearAllAnalyses
 } from "@/lib/analysisStore";
-import type { AnalysisRecord, LegacyAnalysisRecord } from "@/lib/types";
+import { 
+  createMockAnalysis, 
+  createInvalidAnalysisRecord 
+} from "./testUtils/analysisStoreTestUtils";
 
 describe("Analysis Store - Critical Data Operations", () => {
   beforeEach(() => {
@@ -15,39 +18,6 @@ describe("Analysis Store - Critical Data Operations", () => {
 
   afterEach(() => {
     clearAllAnalyses();
-  });
-
-  const createMockAnalysis = (id: number): AnalysisRecord => ({
-    id,
-    job: {
-      title: "Test Job",
-      company: "Test Company",
-      stack: ["React", "TypeScript"],
-      qualifications: ["3+ years experience"],
-      roles: ["Frontend Developer"],
-      benefits: ["Remote work"],
-      fetchedAt: Date.now(),
-      sourceDomain: "example.com"
-    },
-    cv: {
-      roles: [{ title: "Developer", stack: ["React"] }],
-      skills: ["JavaScript"],
-      projects: [],
-      education: [],
-      keywords: []
-    },
-    llmAnalysis: {
-      matchScore: 80,
-      reasoning: ["Strong React experience"],
-      letters: {},
-      analyzedAt: Date.now(),
-      analysisVersion: "1.0"
-    },
-    userInteractions: {
-      interactionCount: 0
-    },
-    createdAt: Date.now(),
-    updatedAt: Date.now()
   });
 
   it("should save and retrieve analysis records", () => {
@@ -62,47 +32,6 @@ describe("Analysis Store - Critical Data Operations", () => {
     expect(retrieved?.job.title).toBe("Test Job");
   });
 
-  it("should handle legacy record format conversion", () => {
-    const legacyRecord: LegacyAnalysisRecord = {
-      id: 456,
-      job: {
-        title: "Legacy Job",
-        company: "Legacy Company",
-        stack: ["Vue"],
-        qualifications: [],
-        roles: [],
-        benefits: [],
-        fetchedAt: Date.now()
-      },
-      cv: {
-        roles: [],
-        skills: [],
-        projects: [],
-        education: [],
-        keywords: []
-      },
-      analysis: {
-        matchScore: 70,
-        reasoning: ["Legacy analysis"],
-        letters: {},
-        analyzedAt: Date.now(),
-        analysisVersion: "1.0",
-        interactionCount: 0,
-        status: "interested",
-        notes: "Test note"
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-
-    const saved = saveAnalysis(legacyRecord);
-    
-    expect(saved.id).toBe(456);
-    expect(saved.llmAnalysis).toBeDefined();
-    expect(saved.userInteractions).toBeDefined();
-    expect(saved.userInteractions.status).toBe("interested");
-    expect(saved.userInteractions.notes).toBe("Test note");
-  });
 
   it("should list analyses in correct order (newest first)", () => {
     const now = Date.now();
@@ -167,38 +96,7 @@ describe("Analysis Store - Critical Data Operations", () => {
   });
 
   it("should validate data schemas on save", () => {
-    const invalidRecord = {
-      id: 999,
-      job: {
-        title: "", // Invalid: empty title
-        company: "Test Company",
-        stack: [],
-        qualifications: [],
-        roles: [],
-        benefits: [],
-        fetchedAt: Date.now()
-      },
-      cv: {
-        roles: [],
-        skills: [],
-        projects: [],
-        education: [],
-        keywords: []
-      },
-      llmAnalysis: {
-        matchScore: 80,
-        reasoning: [],
-        letters: {},
-        analyzedAt: Date.now(),
-        analysisVersion: "1.0"
-      },
-      userInteractions: {
-        interactionCount: 0
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-
+    const invalidRecord = createInvalidAnalysisRecord();
     expect(() => saveAnalysis(invalidRecord as any)).toThrow();
   });
 });

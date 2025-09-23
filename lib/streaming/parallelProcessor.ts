@@ -1,5 +1,5 @@
-import { analyzeSingleJob } from "./jobAnalysis";
-import { addTaskResult, addTaskError, getBackgroundTask, isTaskCancelled, getTaskAbortController } from "@/lib/backgroundTasks";
+import { analyzeSingleJob } from "@/lib/streaming/jobAnalysis";
+import { addTaskResult, addTaskError, getTaskAbortController } from "@/lib/backgroundTasks";
 import { extractErrorMessage } from "@/lib/apiUtils";
 import { getExistingJobUrls } from "@/lib/clientStorage/core";
 import type { CVProfile } from "@/lib/schemas";

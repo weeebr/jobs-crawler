@@ -2,12 +2,16 @@
 
 import { getConfig } from "./configStore";
 
+export interface ClearAllTasksOptions {
+  preserveAnalyses?: boolean;
+}
+
 export interface TaskOperations {
   validateApiKey: (onError?: (message: string) => void) => void;
   createTask: (searchUrl: string) => Promise<any>;
   startStream: (searchUrl: string, taskId: string, clearJobAdData?: boolean) => Promise<Response>;
   cancelTask: (taskId: string) => Promise<boolean>;
-  clearAllTasks: (tasks: any[]) => Promise<void>;
+  clearAllTasks: (tasks: any[], options?: ClearAllTasksOptions) => Promise<void>;
 }
 
 export function createTaskOperations(): TaskOperations {
@@ -61,7 +65,7 @@ export function createTaskOperations(): TaskOperations {
     }
   };
 
-  const clearAllTasks = async (tasks: any[]) => {
+  const clearAllTasks = async (tasks: any[], options?: ClearAllTasksOptions) => {
     for (const task of tasks) {
       if (task.status === 'running') {
         try {
@@ -72,10 +76,12 @@ export function createTaskOperations(): TaskOperations {
       }
     }
     
-    try {
-      await fetch('/api/analyses', { method: 'DELETE' });
-    } catch (error) {
-      console.warn('Failed to clear analysis store:', error);
+    if (!options?.preserveAnalyses) {
+      try {
+        await fetch('/api/analyses', { method: 'DELETE' });
+      } catch (error) {
+        console.warn('Failed to clear analysis store:', error);
+      }
     }
   };
 

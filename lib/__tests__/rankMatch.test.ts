@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { rankMatchScore } from "../rankMatch";
 import type { CVProfile, JobAdParsed } from "../schemas";
-import type { ComparisonResult } from "../compareCv";
+import type { ComparisonResult } from "../schemas";
 
 // Mock environment variables
 const originalEnv = process.env;

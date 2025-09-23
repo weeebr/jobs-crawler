@@ -100,7 +100,7 @@ function getMetadata($: any) {
   // Extract company from structured data
   let company = "Unknown";
   const jsonLdScripts = $('script[type="application/ld+json"]');
-  jsonLdScripts.each((_, script) => {
+  jsonLdScripts.each((_: any, script: any) => {
     const content = $(script).html();
     if (content && content.includes('"hiringOrganization"')) {
       const match = content.match(/"name":"([^"]+)"/);

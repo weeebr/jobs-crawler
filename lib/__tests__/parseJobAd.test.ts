@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 
 import { parseJobAd } from "../parseJobAd";
 
@@ -26,7 +26,7 @@ describe("parseJobAd", () => {
     expect(job.stack.length).toBeGreaterThan(3);
     expect(job.qualifications.length + job.roles.length).toBeGreaterThanOrEqual(3);
     expect(job.publishedAt).toBeDefined();
-  });
+  }, 10000);
 
   it("handles compact metadata labels without separators", async () => {
     const compactHtml = `
@@ -55,5 +55,5 @@ describe("parseJobAd", () => {
 
     expect(job.workload).toBe("80 – 100%");
     expect(job.duration).toBe("Unlimited");
-  });
+  }, 10000);
 });

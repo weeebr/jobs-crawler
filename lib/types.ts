@@ -1,7 +1,6 @@
-// Re-export all types from schemas for backwards compatibility
+// Re-export all types from schemas
 export type { 
   AnalysisRecord,
-  LegacyAnalysisRecord,
   BackgroundTask,
   RecentAnalysisSummary,
   AnalysisStatus,
@@ -10,9 +9,6 @@ export type {
   TaskResponse,
   StreamMessage,
   LinkCollectionProgress,
-  AnalysisDTO,
-  JobAdParsed,
-  AnalysisEnriched,
   CVProfile,
   JobAdFetched,
   LLMAnalysis,

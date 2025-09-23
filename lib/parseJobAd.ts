@@ -24,7 +24,7 @@ import {
 import { extractEnhancedMetadata } from "./jobAd/metadata/structuredExtractor";
 import { filterEmptyValue } from "./jobAd/metadata/filterUtils";
 import { extractMottoLLM } from "./jobAd/metadata/mottoLLM";
-import { jobAdParsedSchema, type JobAdParsed } from "./schemas";
+import { jobAdFetchedSchema, type JobAdParsed } from "./schemas";
 
 export interface ParseJobAdOptions {
   sourceUrl?: string;
@@ -117,5 +117,5 @@ export async function parseJobAd(
     `[parseJobAd] title="${parsed.title}" company="${parsed.company}" stack=${parsed.stack.length} quals=${parsed.qualifications.length} roles=${parsed.roles.length} benefits=${parsed.benefits.length} motto="${motto || 'none'}"`,
   );
 
-  return jobAdParsedSchema.parse(parsed);
+  return jobAdFetchedSchema.parse(parsed);
 }

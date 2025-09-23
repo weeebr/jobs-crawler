@@ -94,6 +94,7 @@ export function setupDefaultMocks() {
 
   // Mock collectJobLinks - this will be overridden in individual tests
   collectJobLinksMock.mockResolvedValue({
-    jobLinks: []
+    jobLinks: [],
+    fetchedPages: 0
   });
 }

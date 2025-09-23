@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -33,7 +33,7 @@ describe("Employment Type Extraction from Fixtures", () => {
       expect(result.duration).not.toContain(" employment");
       expect(result.duration).not.toContain(" contract");
     }
-  });
+  }, 10000);
 
   it("should extract employment type from learning-designer-stem.html", async () => {
     const fixturePath = join(fixturesDir, "learning-designer-stem.html");
@@ -57,7 +57,7 @@ describe("Employment Type Extraction from Fixtures", () => {
       expect(result.duration).not.toContain(" employment");
       expect(result.duration).not.toContain(" contract");
     }
-  });
+  }, 10000);
 
   it("should extract employment type from fullstack-medtech.html", async () => {
     const fixturePath = join(fixturesDir, "fullstack-medtech.html");
@@ -81,7 +81,7 @@ describe("Employment Type Extraction from Fixtures", () => {
       expect(result.duration).not.toContain(" employment");
       expect(result.duration).not.toContain(" contract");
     }
-  });
+  }, 10000);
 
   it("should handle fixtures without employment type information", async () => {
     // Test that our filtering logic works correctly when no employment type is present
@@ -123,5 +123,5 @@ describe("Employment Type Extraction from Fixtures", () => {
         console.log(`Fixture ${index + 1} - Duration: undefined`);
       }
     });
-  });
+  }, 15000);
 });

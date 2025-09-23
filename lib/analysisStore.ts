@@ -1,11 +1,10 @@
 import { 
-  analysisEnrichedSchema, 
   cvProfileSchema, 
   jobAdFetchedSchema,
   llmAnalysisSchema,
   userInteractionsSchema 
 } from "./schemas";
-import type { AnalysisRecord, LegacyAnalysisRecord } from "./types";
+import type { AnalysisRecord } from "./types";
 
 type GlobalWithStore = typeof globalThis & {
   __analysisStore?: Map<number, AnalysisRecord>;
@@ -19,47 +18,21 @@ if (!globalStore.__analysisStore) {
 
 const analyses = globalStore.__analysisStore;
 
-export function saveAnalysis(record: AnalysisRecord | LegacyAnalysisRecord): AnalysisRecord {
+export function saveAnalysis(record: AnalysisRecord): AnalysisRecord {
   const parsedJob = jobAdFetchedSchema.parse(record.job);
   const parsedCv = cvProfileSchema.parse(record.cv);
+  const parsedLLM = llmAnalysisSchema.parse(record.llmAnalysis);
+  const parsedUser = userInteractionsSchema.parse(record.userInteractions);
   
-  // Handle both new and legacy record formats
-  let normalized: AnalysisRecord;
-  
-  if ('llmAnalysis' in record && 'userInteractions' in record) {
-    // New format
-    const parsedLLM = llmAnalysisSchema.parse(record.llmAnalysis);
-    const parsedUser = userInteractionsSchema.parse(record.userInteractions);
-    normalized = {
-      ...record,
-      job: parsedJob,
-      cv: parsedCv,
-      llmAnalysis: parsedLLM,
-      userInteractions: parsedUser,
-      createdAt: record.createdAt || Date.now(),
-      updatedAt: record.updatedAt || Date.now(),
-    };
-  } else {
-    // Legacy format - convert to new structure
-    const legacy = record as LegacyAnalysisRecord;
-    const parsedAnalysis = analysisEnrichedSchema.parse(legacy.analysis);
-    const { status, notes, ...llmData } = parsedAnalysis;
-    
-    normalized = {
-      id: legacy.id,
-      job: parsedJob,
-      cv: parsedCv,
-      llmAnalysis: llmData,
-      userInteractions: {
-        status,
-        notes,
-        lastViewedAt: Date.now(),
-        interactionCount: 0,
-      },
-      createdAt: legacy.createdAt || Date.now(),
-      updatedAt: legacy.updatedAt || Date.now(),
-    };
-  }
+  const normalized: AnalysisRecord = {
+    ...record,
+    job: parsedJob,
+    cv: parsedCv,
+    llmAnalysis: parsedLLM,
+    userInteractions: parsedUser,
+    createdAt: record.createdAt || Date.now(),
+    updatedAt: record.updatedAt || Date.now(),
+  };
 
   analyses.set(record.id, normalized);
   return normalized;

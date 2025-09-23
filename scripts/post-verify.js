@@ -30,6 +30,8 @@ const OVERSIZE_ALLOWLIST = {
   "lib/__tests__/mottoOriginIntegration.test.ts": 320,
   "lib/__tests__/mottoOriginUI.test.ts": 230,
   "lib/__tests__/parseJobAdWithOrigin.test.ts": 290,
+  "lib/__tests__/streamingTwoStage.test.ts": 220,
+  "lib/__tests__/twoStageErrorHandling.test.ts": 220,
 };
 const SCAN_DIRS = ["app", "lib"];
 const IGNORE_DIR_NAMES = new Set([

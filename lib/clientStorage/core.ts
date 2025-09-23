@@ -1,5 +1,5 @@
-import type { AnalysisRecord, LegacyAnalysisRecord } from "../types";
-import { analysisRecordSchema, legacyAnalysisRecordSchema } from "../schemas";
+import type { AnalysisRecord } from "../types";
+import { analysisRecordSchema } from "../schemas";
 import { REPORT_STORAGE_PREFIX, isBrowser } from "./types";
 
 // Load complete analysis record with separated data
@@ -11,18 +11,12 @@ export function loadAnalysisRecord(id: number): AnalysisRecord | null {
     
     const parsed = JSON.parse(raw);
     
-    // Try to validate as current format first
+    // Validate as current format
     try {
       return analysisRecordSchema.parse(parsed);
     } catch (error) {
-      // Try legacy format
-      try {
-        const legacyRecord = legacyAnalysisRecordSchema.parse(parsed);
-        return convertLegacyRecord(legacyRecord);
-      } catch (legacyError) {
-        console.warn("[clientStorage] invalid analysis record format:", error);
-        return null;
-      }
+      console.warn("[clientStorage] invalid analysis record format:", error);
+      return null;
     }
   } catch (error) {
     console.warn("[clientStorage] failed to load analysis", error);
@@ -30,22 +24,6 @@ export function loadAnalysisRecord(id: number): AnalysisRecord | null {
   }
 }
 
-// Convert legacy records to new structure
-function convertLegacyRecord(legacy: LegacyAnalysisRecord): AnalysisRecord {
-  const { analysis, ...rest } = legacy;
-  const { status, notes, ...llmData } = analysis;
-  
-  return {
-    ...rest,
-    llmAnalysis: llmData,
-    userInteractions: {
-      status,
-      notes,
-      lastViewedAt: Date.now(),
-      interactionCount: 0,
-    }
-  };
-}
 
 export function persistAnalysisRecord(record: AnalysisRecord) {
   if (!isBrowser()) return;

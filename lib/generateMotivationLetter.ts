@@ -81,7 +81,7 @@ function buildRequestPayload({ job, cv, heuristics, language }: GenerateLetterIn
   const stackMatches = listStackMatches(heuristics, job.stack, language);
   const topProjects = cv.projects
     .slice(0, 3)
-    .map((project) =>
+    .map((project: { name: string; stack: string[]; impact?: string }) =>
       [project.name, project.stack.slice(0, 6).join(", "), project.impact]
         .filter(Boolean)
         .join(" — "),
@@ -104,7 +104,7 @@ Values: ${job.motto ?? "(not provided)"}
 
 CANDIDATE SNAPSHOT
 Roles: ${cv.roles
-    .map((role) =>
+    .map((role: { title: string; stack: string[]; years?: number }) =>
       [role.title, role.stack.slice(0, 6).join(", "),
         typeof role.years === "number" ? `${role.years} years` : null]
         .filter(Boolean)
