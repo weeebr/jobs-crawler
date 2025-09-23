@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { clearAllData, persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
-import type { AnalysisRecord } from "@/lib/types";
+import { requireAnalysisRecords } from "@/lib/contractValidation";
 
 interface UseDataResetOptions {
   clearAllTasks: () => Promise<void>;
@@ -68,9 +68,10 @@ export function useDataReset({
       });
 
       if (response.ok) {
-        const data = (await response.json()) as AnalysisRecord[];
-        const completeRecords = data.filter(isAnalysisComplete);
-        const incompleteCount = data.length - completeRecords.length;
+        const raw = await response.json();
+        const records = requireAnalysisRecords(raw, 'data-reset.fetchAnalyses');
+        const completeRecords = records.filter(isAnalysisComplete);
+        const incompleteCount = records.length - completeRecords.length;
         
         if (incompleteCount > 0) {
           console.warn(`[data-reset] filtered out ${incompleteCount} incomplete analyses during refetch`);

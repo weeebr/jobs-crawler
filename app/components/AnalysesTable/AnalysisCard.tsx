@@ -99,21 +99,22 @@ export function AnalysisCard({ analysis, status, isNew = false, onStatusToggle, 
         title={`View analysis for ${analysis.title} at ${analysis.company}`}
       >
         {/* Header with Job Title and Company */}
-        <div className="flex items-start">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+        <div className="flex items-start relative">
+          <div className="flex-1 min-w-0 pr-3">
+            <div className="flex items-center">
               <h3 className="text-lg font-semibold text-neutral-900 mb-1 line-clamp-1 group-hover:text-accent-600 transition-colors">
                 {analysis.title}
               </h3>
-              {isNew && (
-                <span className="inline-flex items-center" aria-hidden="true">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                </span>
-              )}
-              {isNew && <span className="sr-only">New analysis</span>}
             </div>
             <p className="text-neutral-600 font-medium">{analysis.company}</p>
           </div>
+          {/* Fixed position blue dot - positioned to the right */}
+          {isNew && (
+            <div className="absolute top-0 right-0 flex items-center" aria-hidden="true">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            </div>
+          )}
+          {isNew && <span className="sr-only">New analysis</span>}
         </div>
 
         {/* Meta Score and Posted Date - separate row */}

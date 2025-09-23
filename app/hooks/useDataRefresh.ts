@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { loadRecentSummaries, persistAnalysisRecord, persistRecentSummaries, toSummary } from "@/lib/clientStorage";
 import { isAnalysisComplete } from "@/lib/analysisValidation";
-import type { AnalysisRecord } from "@/lib/types";
+import { requireAnalysisRecords } from "@/lib/contractValidation";
 import type { BackgroundTask } from "@/lib/useBackgroundTasks";
 
 const MAX_RECENT_ANALYSES = 50;
@@ -47,9 +47,10 @@ export function useDataRefresh({
       });
 
       if (response.ok) {
-        const data = (await response.json()) as AnalysisRecord[];
-        const completeRecords = data.filter(isAnalysisComplete);
-        const incompleteCount = data.length - completeRecords.length;
+        const raw = await response.json();
+        const records = requireAnalysisRecords(raw, 'data-refresh.fetchAnalyses');
+        const completeRecords = records.filter(isAnalysisComplete);
+        const incompleteCount = records.length - completeRecords.length;
 
         if (incompleteCount > 0) {
           console.warn(`[data-refresh] filtered out ${incompleteCount} incomplete analyses during refetch`);

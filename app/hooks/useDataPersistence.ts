@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import {
   clearAllData,
+  loadRecentSummaries,
   persistAnalysisRecord,
   persistAnalysisStatuses,
   persistRecentSummaries,
@@ -52,6 +53,12 @@ export function useDataPersistence({ statuses, forceRefresh }: UseDataPersistenc
 
       console.log('[useDataPersistence] removing analysis record from localStorage');
       removeAnalysisRecord(id);
+      
+      // Update recent summaries to remove the deleted analysis
+      const currentRecent = loadRecentSummaries();
+      const updatedRecent = currentRecent.filter(analysis => analysis.id !== id);
+      persistRecentSummaries(updatedRecent);
+      console.log('[useDataPersistence] updated recent summaries, removed analysis', id);
       
       // Clean up status for deleted analysis
       const current = statuses;

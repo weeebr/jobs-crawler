@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import type { AnalysisRecord } from "./types";
 import { createStreamMessageHandler } from "./streamHandlers";
 import { createTaskOperations, type ClearAllTasksOptions } from "./taskOperations";
+import { requireTaskResponse } from "./contractValidation";
 
 export interface BackgroundTask {
   id: string;
@@ -61,8 +62,9 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
     try {
       const response = await fetch('/api/tasks');
       if (response.ok) {
-        const data = await response.json();
-        setTasks(data.tasks || []);
+        const raw = await response.json();
+        const parsed = requireTaskResponse(raw, 'useBackgroundTasks.loadTasks');
+        setTasks(parsed.tasks);
       }
     } catch (error) {
       console.warn('Failed to load tasks:', error);

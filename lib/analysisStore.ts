@@ -49,7 +49,13 @@ export function listAnalyses(limit = 10): AnalysisRecord[] {
 }
 
 export function deleteAnalysis(id: number): boolean {
-  return analyses.delete(id);
+  console.log(`[analysisStore] deleteAnalysis called for id: ${id}`);
+  console.log(`[analysisStore] current store size: ${analyses.size}`);
+  console.log(`[analysisStore] store keys:`, Array.from(analyses.keys()));
+  const removed = analyses.delete(id);
+  console.log(`[analysisStore] delete result: ${removed}`);
+  console.log(`[analysisStore] new store size: ${analyses.size}`);
+  return removed;
 }
 
 export function clearAllAnalyses(): void {

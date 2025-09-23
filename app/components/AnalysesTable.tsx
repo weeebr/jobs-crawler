@@ -27,6 +27,29 @@ export function AnalysesTable({
     [analyses],
   );
 
+  useEffect(() => {
+    if (filters.size === "all") {
+      return;
+    }
+
+    if (dynamicOptions.sizes.includes(filters.size)) {
+      return;
+    }
+
+    console.info('[analyses-table] resetting stale team size filter', {
+      previousSizeFilter: filters.size,
+    });
+
+    setFilters((current: FilterState) => {
+      if (current.size === "all") {
+        return current;
+      }
+      const next = { ...current, size: "all" };
+      persistFilterState(next);
+      return next;
+    });
+  }, [dynamicOptions.sizes, filters.size]);
+
   const filteredAnalyses = useMemo(
     () => filterAndSortAnalyses(analyses, filters, statuses),
     [analyses, filters, statuses],

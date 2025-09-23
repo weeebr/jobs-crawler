@@ -12,29 +12,33 @@ export default function ConfigPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    const loadCvFromEnv = async () => {
+    const loadFromEnv = async () => {
       const currentConfig = getConfig();
       
-      // Load CV from .env file if no user CV is set
-      if (!currentConfig.cvMarkdown || currentConfig.cvMarkdown.trim() === '') {
-        try {
-          const response = await fetch('/api/cv/env');
-          if (response.ok) {
-            const cvData = await response.json();
-            if (cvData.markdown && cvData.source === 'env') {
-              setConfigState(prev => ({ ...prev, cvMarkdown: cvData.markdown }));
-              return;
-            }
+      try {
+        const response = await fetch('/api/cv/env');
+        if (response.ok) {
+          const envData = await response.json();
+          
+          // Load CV from .env file if no user CV is set
+          if (envData.markdown && envData.source === 'env' && (!currentConfig.cvMarkdown || currentConfig.cvMarkdown.trim() === '')) {
+            setConfigState(prev => ({ ...prev, cvMarkdown: envData.markdown }));
           }
-        } catch (error) {
-          console.warn('Failed to load CV from .env:', error);
+          
+          // Load API key from .env file if no user API key is set
+          if (envData.hasEnvApiKey && (!currentConfig.openaiApiKey || currentConfig.openaiApiKey.trim() === '')) {
+            // Don't expose the actual key, just indicate it's available
+            setConfigState(prev => ({ ...prev, openaiApiKey: '[CONFIGURED IN ENVIRONMENT]' }));
+          }
         }
+      } catch (error) {
+        console.warn('Failed to load from .env:', error);
       }
       
       setConfigState(currentConfig);
     };
 
-    loadCvFromEnv();
+    loadFromEnv();
   }, []);
 
   const handleSave = async () => {

@@ -3,6 +3,8 @@ import type { AnalysisStatus } from "@/lib/clientStorage";
 import type { DynamicOptions } from "./types";
 import { roundMatchScore } from "@/lib/matchScore";
 import { createFuzzySearch } from "./searchUtils";
+import { normalizeLocationLabel } from "@/lib/jobAd/metadata/locationUtils";
+import { determineCompanySizeOptions, matchesCompanySizeFilter } from "./companySizeUtils";
 
 export function isValidLocationForFilter(text: string): boolean {
   const trimmed = text.trim();
@@ -36,23 +38,17 @@ export function isValidLocationForFilter(text: string): boolean {
 }
 
 export function deriveDynamicOptions(analyses: RecentAnalysisSummary[]): DynamicOptions {
-  const sizeSet = new Set<string>();
   const locationMap = new Map<string, string>();
   const techMap = new Map<string, string>();
 
   for (const item of analyses) {
-    if (item.teamSize) {
-      // Transform old format (with +) to new format (without +)
-      const normalizedSize = item.teamSize.replace('+', '');
-      sizeSet.add(normalizedSize);
-    }
-
     if (item.location) {
       const trimmed = item.location.trim();
-      if (trimmed.length > 0 && isValidLocationForFilter(trimmed)) {
-        const normalized = trimmed.toLowerCase();
-        if (!locationMap.has(normalized)) {
-          locationMap.set(normalized, trimmed);
+      const normalizedLabel = normalizeLocationLabel(trimmed) ?? trimmed;
+      if (normalizedLabel.length > 0 && isValidLocationForFilter(normalizedLabel)) {
+        const normalizedValue = normalizedLabel.toLowerCase();
+        if (!locationMap.has(normalizedValue)) {
+          locationMap.set(normalizedValue, normalizedLabel);
         }
       }
     }
@@ -71,23 +67,7 @@ export function deriveDynamicOptions(analyses: RecentAnalysisSummary[]): Dynamic
   }
 
   return {
-    sizes: Array.from(sizeSet).sort((a, b) => {
-      // Sort numerically for team sizes
-      const numA = parseInt(a, 10);
-      const numB = parseInt(b, 10);
-      
-      // If both are numbers, sort numerically
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return numA - numB;
-      }
-      
-      // If only one is a number, put numbers first
-      if (!isNaN(numA)) return -1;
-      if (!isNaN(numB)) return 1;
-      
-      // If neither is a number, sort alphabetically
-      return a.localeCompare(b);
-    }),
+    sizes: determineCompanySizeOptions(analyses),
     locations: Array.from(locationMap.entries())
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([value, label]) => ({ value, label })),
@@ -125,10 +105,7 @@ export function filterAndSortAnalyses(
     }
 
     if (filters.size !== "all") {
-      // Normalize both the item teamSize and filter size for comparison
-      const normalizedItemSize = item.teamSize?.replace('+', '') || '';
-      const normalizedFilterSize = filters.size.replace('+', '');
-      if (normalizedItemSize !== normalizedFilterSize) {
+      if (!matchesCompanySizeFilter(item.size, filters.size)) {
         return false;
       }
     }
@@ -138,8 +115,8 @@ export function filterAndSortAnalyses(
     }
 
     if (filters.location !== "all") {
-      const location = item.location?.trim().toLowerCase();
-      if (!location || location !== filters.location) {
+      const normalizedLocation = normalizeLocationLabel(item.location)?.toLowerCase();
+      if (!normalizedLocation || normalizedLocation !== filters.location) {
         return false;
       }
     }

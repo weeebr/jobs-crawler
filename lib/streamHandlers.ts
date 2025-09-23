@@ -2,6 +2,7 @@
 
 import type { AnalysisRecord } from "./types";
 import { persistAnalysisRecord } from "./clientStorage";
+import { safeParseAnalysisRecord } from "./contractValidation";
 
 export interface StreamMessageHandler {
   handleMessage: (message: any, taskId: string, setTasks: (updater: (prev: any[]) => any[]) => void) => void;
@@ -30,15 +31,19 @@ export function createStreamMessageHandler(): StreamMessageHandler {
         break;
 
       case 'result':
-        const result = message.data.record as AnalysisRecord;
-        persistAnalysisRecord(result);
+        const parsedRecord = safeParseAnalysisRecord(message?.data?.record, 'sse.result');
+        if (!parsedRecord) {
+          break;
+        }
+
+        persistAnalysisRecord(parsedRecord);
         
         setTasks(prev => {
           const updated = prev.map(task => 
             task.id === taskId 
               ? { 
                   ...task, 
-                  results: [...task.results, result],
+                  results: [...task.results, parsedRecord],
                   progress: { 
                     ...task.progress, 
                     completed: task.progress.completed + 1

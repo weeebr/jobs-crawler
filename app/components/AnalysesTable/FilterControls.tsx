@@ -1,7 +1,6 @@
 import type { FilterState } from "@/lib/clientStorage";
 import type { DynamicOptions } from "./types";
 import { SCORE_FILTERS, STATUS_FILTERS, SORT_OPTIONS } from "./types";
-import { DEFAULT_FILTER_STATE } from "@/lib/clientStorage";
 
 interface FilterControlsProps {
   filters: FilterState;
@@ -34,17 +33,17 @@ export function FilterControls({ filters, dynamicOptions, onFilterChange, onRese
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">Max team size</label>
+        <label className="block text-sm font-medium text-neutral-700 mb-2">Max company size</label>
         <select
           value={filters.size}
           onChange={(event) => onFilterChange('size', event.target.value)}
           className="input-field text-sm"
-          title="Filter by team size"
+          title="Filter by maximum company size (≤ selected value)"
         >
           <option value="all">All sizes</option>
           {dynamicOptions.sizes.map((size: string) => (
             <option key={size} value={size}>
-              {size}
+              ≤ {size}
             </option>
           ))}
         </select>

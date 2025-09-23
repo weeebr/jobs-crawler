@@ -2,10 +2,7 @@ import { load } from "cheerio";
 import { filterEmptyValue, filterDurationValue } from "./filterUtils";
 import { normalizeLocationLabel } from "./locationUtils";
 
-/**
- * Enhanced metadata extraction that leverages structured HTML data
- * Specifically designed for jobs.ch and similar structured job ad formats
- */
+// Enhanced metadata extraction leveraging structured HTML (jobs.ch-style)
 
 export interface StructuredMetadata {
   workload?: string;
@@ -17,9 +14,7 @@ export interface StructuredMetadata {
   teamSize?: string;
 }
 
-/**
- * Extract metadata from structured HTML using data attributes and semantic selectors
- */
+// Extract metadata from structured HTML using data attributes and semantic selectors
 export function extractStructuredMetadata(
   $: ReturnType<typeof load>,
   html: string,
@@ -109,9 +104,7 @@ export function extractStructuredMetadata(
   return metadata;
 }
 
-/**
- * Helper function to extract metadata using regex patterns
- */
+// Helper to extract metadata using regex patterns
 function extractByPatterns(text: string, patterns: RegExp[]): string | undefined {
   for (const pattern of patterns) {
     const match = text.match(pattern);
@@ -126,9 +119,7 @@ function extractByPatterns(text: string, patterns: RegExp[]): string | undefined
   return undefined;
 }
 
-/**
- * Extract employment type with proper transformation
- */
+// Extract employment type with proper transformation
 function extractEmploymentType(text: string): string | undefined {
   // First try to match employment types with optional "employment" suffix
   const employmentMatch = text.match(/\b(unlimited|permanent|temporary|fixed-term|part-time|full-time)(?:\s+employment)?\b/i);
@@ -156,9 +147,7 @@ function extractEmploymentType(text: string): string | undefined {
   return undefined;
 }
 
-/**
- * Transform employment type strings to remove common suffixes
- */
+// Transform employment type strings to remove common suffixes
 function transformEmploymentType(type: string): string {
   const lower = type.toLowerCase();
   
@@ -176,9 +165,7 @@ function transformEmploymentType(type: string): string {
   return type;
 }
 
-/**
- * Fallback extraction for non-structured HTML using semantic selectors
- */
+// Fallback extraction for non-structured HTML using semantic selectors
 export function extractSemanticMetadata(
   $: ReturnType<typeof load>,
   text: string,
@@ -256,9 +243,7 @@ export function extractSemanticMetadata(
   return metadata;
 }
 
-/**
- * Enhanced metadata extraction that tries structured first, then falls back to semantic
- */
+// Enhanced metadata extraction that tries structured first, then falls back to semantic
 export function extractEnhancedMetadata(
   $: ReturnType<typeof load>,
   html: string,

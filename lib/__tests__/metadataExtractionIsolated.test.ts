@@ -34,7 +34,7 @@ describe("Metadata Extraction - Essential Tests", () => {
     // Should preserve valid data
     expect(metadata.workload).toBe("80%");
     expect(metadata.language).toBe("English");
-    expect(metadata.location).toBe("Zurich, Switzerland");
+    expect(metadata.location).toBe("Zurich");
     
     // Should filter out empty data
     expect(metadata.duration).toBeUndefined();
@@ -53,6 +53,6 @@ describe("Metadata Extraction - Essential Tests", () => {
     expect(extractWorkload($, "Workload: 80%")).toBe("80%");
     expect(extractDuration($, "Contract type: Permanent")).toBe("Permanent");
     expect(extractLanguage($, "Language: English")).toBe("English");
-    expect(extractLocation($, "Location: Zurich, Switzerland")).toBe("Zurich, Switzerland");
+    expect(extractLocation($, "Location: Zurich, Switzerland")).toBe("Zurich");
   });
 });

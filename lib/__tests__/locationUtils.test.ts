@@ -15,8 +15,8 @@ describe("normalizeLocationLabel", () => {
     expect(normalizeLocationLabel("Remote (US)")).toBe("Remote (US)");
   });
 
-  it("handles compact postal formats", () => {
-    expect(normalizeLocationLabel("CH-8005 Zürich"))
-      .toBe("8005 Zürich");
+  it("picks postal segment when company and street precede it", () => {
+    expect(normalizeLocationLabel("Noser Engineering AG, Platz 4, 6039 Root D4"))
+      .toBe("6039 Root D4");
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { getConfig } from "./configStore";
+import { requireBackgroundTask } from "./contractValidation";
 
 export interface ClearAllTasksOptions {
   preserveAnalyses?: boolean;
@@ -32,7 +32,9 @@ export function createTaskOperations(): TaskOperations {
       throw new Error('Failed to create background task');
     }
 
-    return response.json();
+    const payload = await response.json();
+    const task = requireBackgroundTask(payload?.task, 'taskOperations.createTask');
+    return { task };
   };
 
   const startStream = async (searchUrl: string, taskId: string, clearJobAdData?: boolean) => {
