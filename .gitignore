@@ -40,5 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# database
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
 # eslint
 .eslintcache
