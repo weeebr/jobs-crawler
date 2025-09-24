@@ -1,2 +1,3 @@
-// Re-export all operations from the modularized analysisStorage directory
-export * from './analysisStorage/index';
+// Re-export analysis storage operations
+export * from './db/analysisStorageConsolidated';
+export { analysisStorage } from './db/analysisStorageConsolidated';

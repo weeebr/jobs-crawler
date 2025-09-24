@@ -50,6 +50,10 @@ export function getBackgroundTask(id: string): BackgroundTask | undefined {
   return tasks.get(id);
 }
 
+export function getTaskById(id: string): BackgroundTask | undefined {
+  return tasks.get(id);
+}
+
 export function updateTaskProgress(
   taskId: string,
   progress: Partial<BackgroundTask['progress']>

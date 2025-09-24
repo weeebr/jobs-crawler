@@ -1,4 +1,4 @@
-import { db } from './index';
+import { db, sqlite } from './index';
 import { analysisFeedback, jobSearches, analysisRecords, cvProfiles } from './schema';
 
 // Utility functions for data migration and cleanup
@@ -18,7 +18,7 @@ export const dbUtils = {
       FROM sqlite_master
       WHERE type='table' AND name NOT LIKE 'sqlite_%'
       GROUP BY name
-    `);
+    `) as Array<{ name: string; count: number }>;
 
     return {
       tables: tables.map(t => ({ name: t.name, count: t.count })),
@@ -28,7 +28,7 @@ export const dbUtils = {
 
   // Optimize database
   optimize: async (): Promise<void> => {
-    db.pragma('vacuum');
-    db.pragma('reindex');
+    sqlite.pragma('vacuum');
+    sqlite.pragma('reindex');
   },
 };

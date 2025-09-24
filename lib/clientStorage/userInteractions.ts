@@ -33,6 +33,7 @@ export function updateUserInteractions(id: number, updates: Partial<UserInteract
   try {
     const current = loadUserInteractions(id) || {
       interactionCount: 0,
+      isNewThisRun: false,
     };
     const updated = {
       ...current,

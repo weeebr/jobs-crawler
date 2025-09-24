@@ -16,7 +16,7 @@ export async function GET(_request: Request) {
     const apiKey = await getApiKeyFromRequest();
     console.info(`[api/analyses/new-this-run] fetching for API key: ${apiKey.substring(0, 8)}...`);
 
-    const analyses = await analysisStorage.getNewThisRun();
+    const analyses = await analysisStorage.getNewThisRun(apiKey);
 
     console.info(`[api/analyses/new-this-run] returning ${analyses.length} records`);
 

@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadRecentSummaries, loadAnalysisStatuses } from "../index";
+import { loadRecentSummaries } from "../recentSummaries";
+import { loadAnalysisStatuses } from "../analysisStatus";
 import type { RecentAnalysisSummary, AnalysisStatus } from "../types";
 import { handleStorageChange, handleImmediateUpdate } from "./handlers";
 import { batchUpdate } from "./batch";
 import { refreshData, forceRefresh } from "./refresh";
+import {
+  createBatchUpdateHandler,
+  createStorageChangeHandler,
+  createImmediateUpdateHandler
+} from "./syncHelpers";
 
 /** Simplified real-time localStorage sync hook */
 export function useRealtimeStorageSync() {
@@ -42,55 +48,37 @@ export function useRealtimeStorageSync() {
 
       if (queuedRecent) {
         setRecent(queuedRecent);
-        console.info(`[realtime-sync] batched update: ${queuedRecent.length} analyses`);
       }
 
       if (queuedStatuses) {
         setStatuses(queuedStatuses);
-        console.info(`[realtime-sync] batched update: ${Object.keys(queuedStatuses).length} statuses`);
       }
 
       updateQueueRef.current = {};
     }, 100);
-  }, []);
+  }, [setRecent, setStatuses]);
 
   useEffect(() => {
     if (!isHydrated) return;
 
     const timeoutId = setTimeout(() => {
-      const handleStorageChangeEvent = (event: StorageEvent) => {
-        if (isUpdatingRef.current) return;
+      const handleStorageChangeEvent = createStorageChangeHandler(
+        isUpdatingRef,
+        loadRecentSummaries,
+        loadAnalysisStatuses,
+        updateQueueRef,
+        batchUpdateCallback,
+        handleStorageChange
+      );
 
-        if (event.key === 'recent-analyses' || event.key === 'analysis-statuses') {
-          console.info(`[realtime-sync] storage change detected for ${event.key}`);
-
-          isUpdatingRef.current = true;
-
-          try {
-            handleStorageChange(event, loadRecentSummaries, loadAnalysisStatuses, updateQueueRef, batchUpdateCallback);
-          } finally {
-            setTimeout(() => {
-              isUpdatingRef.current = false;
-            }, 100);
-          }
-        }
-      };
-
-      const handleImmediateUpdateEvent = (event: CustomEvent) => {
-        if (isUpdatingRef.current) return;
-
-        console.info(`[realtime-sync] immediate update detected for ${event.detail.key}`);
-
-        isUpdatingRef.current = true;
-
-        try {
-          handleImmediateUpdate(event, loadRecentSummaries, loadAnalysisStatuses, updateQueueRef, batchUpdateCallback);
-        } finally {
-          setTimeout(() => {
-            isUpdatingRef.current = false;
-          }, 100);
-        }
-      };
+      const handleImmediateUpdateEvent = createImmediateUpdateHandler(
+        isUpdatingRef,
+        loadRecentSummaries,
+        loadAnalysisStatuses,
+        updateQueueRef,
+        batchUpdateCallback,
+        handleImmediateUpdate
+      );
 
       window.addEventListener('storage', handleStorageChangeEvent);
       window.addEventListener('localStorageImmediateUpdate', handleImmediateUpdateEvent as EventListener);
@@ -106,13 +94,6 @@ export function useRealtimeStorageSync() {
     };
   }, [isHydrated, batchUpdateCallback]);
 
-  useEffect(() => {
-    return () => {
-      if (batchTimeoutRef.current) {
-        clearTimeout(batchTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const refreshDataCallback = useCallback(() => {
     if (isUpdatingRef.current) return;
@@ -132,7 +113,7 @@ export function useRealtimeStorageSync() {
         isUpdatingRef.current = false;
       }, 100);
     }
-  }, []);
+  }, [setRecent, setStatuses]);
 
   const forceRefreshCallback = useCallback(() => {
     const now = Date.now();
@@ -163,7 +144,7 @@ export function useRealtimeStorageSync() {
       setRecent,
       setStatuses
     );
-  }, []);
+  }, [setRecent, setStatuses]);
 
   const clearAllData = useCallback(() => {
     setRecent([]);

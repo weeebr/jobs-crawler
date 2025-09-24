@@ -1,5 +1,5 @@
 import type { AnalysisRecord } from "./types";
-import type { AnalysisRecord as DbAnalysisRecord } from "./db/schema";
+import type { AnalysisRecord as DbAnalysisRecord, NewAnalysisRecord } from "./db/schema";
 
 // Define database table types
 export type AnalysisRecordsTable = typeof import('./db/schema').analysisRecords;
@@ -7,15 +7,16 @@ export type UsersTable = typeof import('./db/schema').users;
 
 // Define types for the database storage interface
 export interface DatabaseStorage {
-  save: (apiKey: string, record: Omit<AnalysisRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<AnalysisRecord>;
+  save: (apiKey: string, record: Omit<NewAnalysisRecord, 'userId'> | AnalysisRecord) => Promise<AnalysisRecord>;
   getById: (apiKey: string, id: number) => Promise<AnalysisRecord | null>;
-  getAll: (apiKey: string, limit?: number) => Promise<AnalysisRecord[]>;
+  getAll: (apiKey: string, limit?: number, offset?: number) => Promise<AnalysisRecord[]>;
   delete: (apiKey: string, id: number) => Promise<boolean>;
-  getStats: (apiKey: string) => Promise<{ total: number; interested: number; applied: number; averageScore: number; userId: number; memberSince: number }>;
+  getStats: (apiKey: string) => Promise<{ total: number; interested: number; applied: number; averageScore: number; userId: number; memberSince: Date }>;
   getNewThisRun: (apiKey: string) => Promise<AnalysisRecord[]>;
-  update: (apiKey: string, id: number, updates: Partial<AnalysisRecord>) => Promise<AnalysisRecord | null>;
+  update: (apiKey: string, id: number, updates: Partial<Omit<NewAnalysisRecord, 'userId'>>) => Promise<AnalysisRecord | null>;
   searchByCompany: (apiKey: string, company: string) => Promise<AnalysisRecord[]>;
   getByStatus: (apiKey: string, status: "interested" | "applied") => Promise<AnalysisRecord[]>;
+  clear: (apiKey?: string) => Promise<void>;
 }
 
 // Storage state

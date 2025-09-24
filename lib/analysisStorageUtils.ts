@@ -1,5 +1,5 @@
 import type { AnalysisRecord } from "./types";
-import type { DbAnalysisRecord } from "./db/schema";
+import type { AnalysisRecord as DbAnalysisRecord } from "./db/schema";
 
 // Get API key from environment - this should be set by middleware or from user session
 export async function getCurrentApiKey(): Promise<string> {
@@ -15,6 +15,10 @@ export function parseReasoningField(reasoning: string): string[] {
     // Try to parse as JSON first (new format)
     const parsed = JSON.parse(reasoning);
     if (Array.isArray(parsed)) {
+      // If array is empty, provide a default reasoning
+      if (parsed.length === 0) {
+        return ["Analysis completed but no detailed reasoning available."];
+      }
       return parsed;
     }
     // If not an array, treat as old string format and wrap in array
@@ -25,25 +29,54 @@ export function parseReasoningField(reasoning: string): string[] {
   }
 }
 
+// Import type conversion utilities
+import {
+  clientToDbString,
+  clientToDbArray,
+  dbToClientString,
+  dbToClientArray,
+  clientToDbEnum,
+  dbToClientEnum,
+  createDescriptionFromJobData,
+} from "./analysisStorageConverters";
+
+// Re-export converter functions for backward compatibility
+export {
+  clientToDbString,
+  clientToDbArray,
+  dbToClientString,
+  dbToClientArray,
+  clientToDbEnum,
+  dbToClientEnum,
+  createDescriptionFromJobData,
+};
+
 // Convert between client and database record formats
 export function clientRecordToDbRecord(record: AnalysisRecord): Omit<DbAnalysisRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'> {
+  console.log("Converting client record to DB record");
+  console.log("Client record job.title:", record.job.title);
+  console.log("Client record job:", JSON.stringify(record.job, null, 2));
   return {
     title: record.job.title,
     company: record.job.company,
-    description: record.job.description,
-    publishedAt: record.job.publishedAt,
-    location: record.job.location,
-    workload: record.job.workload,
-    duration: record.job.duration,
-    size: record.job.size,
-    companySize: record.job.companySize,
+    description: createDescriptionFromJobData(record.job), // Keep for backward compatibility
+    publishedAt: clientToDbString(record.job.publishedAt),
+    location: clientToDbString(record.job.location),
+    workload: clientToDbString(record.job.workload),
+    duration: clientToDbString(record.job.duration),
+    size: clientToDbString(record.job.size),
+    companySize: clientToDbString(record.job.companySize),
     stack: record.job.stack,
+    // Use structured job content fields
+    qualifications: clientToDbArray(record.job.qualifications),
+    roles: clientToDbArray(record.job.roles),
+    benefits: clientToDbArray(record.job.benefits),
     matchScore: record.llmAnalysis.matchScore,
     reasoning: JSON.stringify(record.llmAnalysis.reasoning), // Convert array to JSON string
-    status: record.userInteractions.status,
+    status: clientToDbEnum(record.userInteractions.status),
     isNewThisRun: record.userInteractions.isNewThisRun || false,
-    sourceUrl: record.job.sourceUrl,
-    sourceType: record.job.sourceType,
+    sourceUrl: clientToDbString(record.job.sourceUrl),
+    sourceType: null, // Client schema doesn't have sourceType field, database field is optional
   };
 }
 
@@ -69,16 +102,20 @@ export function dbRecordToClientRecord(record: DbAnalysisRecord): AnalysisRecord
       job: {
         title: record.title,
         company: record.company,
-        description: record.description || undefined,
-        publishedAt: record.publishedAt || undefined,
-        location: record.location || undefined,
-        workload: record.workload || undefined,
-        duration: record.duration || undefined,
-        size: record.size || undefined,
-        companySize: record.companySize || undefined,
+        description: dbToClientString(record.description), // Keep for backward compatibility
+        publishedAt: dbToClientString(record.publishedAt),
+        location: dbToClientString(record.location),
+        workload: dbToClientString(record.workload),
+        duration: dbToClientString(record.duration),
+        size: dbToClientString(record.size),
+        companySize: dbToClientString(record.companySize),
         stack: record.stack,
-        sourceUrl: record.sourceUrl && record.sourceUrl.trim() ? record.sourceUrl : undefined,
-        sourceType: record.sourceType || undefined,
+        // Use structured fields from database
+        qualifications: dbToClientArray(record.qualifications),
+        roles: dbToClientArray(record.roles),
+        benefits: dbToClientArray(record.benefits),
+        sourceUrl: dbToClientString(record.sourceUrl),
+        sourceType: dbToClientString(record.sourceType),
         fetchedAt: dateToTimestamp(record.createdAt),
         sourceDomain: record.sourceUrl && record.sourceUrl.trim() ? new URL(record.sourceUrl).hostname : undefined,
       },
@@ -105,7 +142,7 @@ export function dbRecordToClientRecord(record: DbAnalysisRecord): AnalysisRecord
       updatedAt: dateToTimestamp(record.updatedAt),
     };
 
-    return analysisRecordSchema.parse(clientRecord);
+    return clientRecord as AnalysisRecord;
   } catch (error) {
     console.error('[dbRecordToClientRecord] Failed to transform record ID:', record.id, 'Error:', error);
     console.error('[dbRecordToClientRecord] Record data:', JSON.stringify(record, null, 2));
@@ -121,48 +158,34 @@ export function shouldSkipJobUrl(url: string): { skip: boolean; reason?: string 
 
   try {
     const urlObj = new URL(url);
+    console.info(`[shouldSkipJobUrl] checking URL: ${url}`);
+    console.info(`[shouldSkipJobUrl] hostname: ${urlObj.hostname}, pathname: ${urlObj.pathname}`);
 
     // Skip non-jobs.ch URLs (for now, we only process jobs.ch)
     if (!urlObj.hostname.includes('jobs.ch')) {
+      console.info(`[shouldSkipJobUrl] skipping non-jobs.ch URL: ${url}`);
       return { skip: true, reason: 'Non-jobs.ch domain' };
     }
 
     // Skip URLs that don't match the expected job detail pattern
     if (!urlObj.pathname.includes('/vacancies/detail/')) {
+      console.info(`[shouldSkipJobUrl] skipping non-detail URL: ${url}`);
       return { skip: true, reason: 'Not a job detail page' };
     }
 
     // Skip URLs with invalid or missing job IDs
     const jobIdMatch = urlObj.pathname.match(/\/vacancies\/detail\/([^\/]+)/);
     if (!jobIdMatch || !jobIdMatch[1] || jobIdMatch[1].length < 10) {
+      console.info(`[shouldSkipJobUrl] skipping invalid job ID URL: ${url}, jobId: ${jobIdMatch?.[1]}`);
       return { skip: true, reason: 'Invalid or missing job ID' };
     }
 
+    console.info(`[shouldSkipJobUrl] accepting URL: ${url}`);
     // Skip duplicate URLs (this check will be done by the caller)
     return { skip: false };
   } catch (error) {
+    console.error(`[shouldSkipJobUrl] error parsing URL ${url}:`, error);
     return { skip: true, reason: `Invalid URL format: ${error instanceof Error ? error.message : 'Unknown error'}` };
-  }
-}
-
-// Validate and normalize timestamp fields for database operations
-export function validateTimestampFields(record: { createdAt?: unknown; updatedAt?: unknown }): void {
-  if (record.createdAt && !(record.createdAt instanceof Date)) {
-    if (isNaN(new Date(record.createdAt).getTime())) {
-      console.warn('[validateTimestampFields] Invalid createdAt value, using current time:', record.createdAt);
-      record.createdAt = new Date();
-    } else {
-      record.createdAt = new Date(record.createdAt);
-    }
-  }
-
-  if (record.updatedAt && !(record.updatedAt instanceof Date)) {
-    if (isNaN(new Date(record.updatedAt).getTime())) {
-      console.warn('[validateTimestampFields] Invalid updatedAt value, using current time:', record.updatedAt);
-      record.updatedAt = new Date();
-    } else {
-      record.updatedAt = new Date(record.updatedAt);
-    }
   }
 }
 

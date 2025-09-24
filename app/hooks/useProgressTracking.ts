@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import type { BackgroundTask } from "@/lib/useBackgroundTasks";
+import type { BackgroundTask } from "@/lib/schemas";
 
-export function useProgressTracking(activeTasks: BackgroundTask[], isPending: boolean, isStreaming: boolean) {
+export function useProgressTracking(activeTasks: BackgroundTask[], isPending: boolean, isPolling: boolean) {
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   const aggregatedProgress = useMemo(() => {
@@ -69,7 +69,7 @@ export function useProgressTracking(activeTasks: BackgroundTask[], isPending: bo
     return `${totals.completed}/${totals.total}`;
   }, [activeTasks]);
 
-  const showLoadingBar = isPending || isStreaming || activeTasks.length > 0;
+  const showLoadingBar = isPending || isPolling || activeTasks.length > 0;
 
   // Set progress bar width programmatically to avoid inline styles
   useEffect(() => {

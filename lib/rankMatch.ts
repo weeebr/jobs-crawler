@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { CVProfile, JobAdParsed, ComparisonResult, MatchRanking } from "./schemas";
-import { roleSchema, projectSchema } from "./schemas/cvSchemas";
+import { roleSchema, projectSchema } from "./schemas/core";
 
 type CVRole = z.infer<typeof roleSchema>;
 type CVProject = z.infer<typeof projectSchema>;

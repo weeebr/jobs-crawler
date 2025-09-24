@@ -88,8 +88,8 @@ export async function parseJobAd(
   
   // Use LLM-based motto extraction with high confidence requirement
   const mottoResult = await extractMottoLLM(combinedText, company.trim(), options.sourceUrl);
-  const motto = mottoResult.motto === "-" ? undefined : mottoResult.motto; // Convert "-" to undefined for schema compatibility
-  const mottoOrigin = mottoResult.origin; // Store origin information
+  const motto = mottoResult?.motto === "-" ? undefined : mottoResult?.motto; // Convert "-" to undefined for schema compatibility
+  const mottoOrigin = mottoResult?.origin; // Store origin information
   
   // Try structured extraction first, then fall back to individual extractors
   const structuredMetadata = extractEnhancedMetadata($, html, combinedText);

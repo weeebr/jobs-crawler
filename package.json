@@ -18,7 +18,8 @@
     "verify:force": "rm -f .verify-lock .verify-lock.tmp && node scripts/post-verify.js",
     "db:push": "drizzle-kit push",
     "db:sync:to-hosted": "npx tsx scripts/sync-db.js to-hosted",
-    "db:sync:from-hosted": "npx tsx scripts/sync-db.js from-hosted"
+    "db:sync:from-hosted": "npx tsx scripts/sync-db.js from-hosted",
+    "deploy:fly": "node scripts/setup-fly.js --deploy"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",

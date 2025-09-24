@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { baseJobDataSchema } from "./jobSchemas";
+import { baseJobDataSchema } from "./core";
 import { idFieldSchema, metadataFieldsSchema } from "./commonSchemas";
 
 // Client storage schemas

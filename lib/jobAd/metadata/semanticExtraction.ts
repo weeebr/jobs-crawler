@@ -1,7 +1,22 @@
 import { load } from "cheerio";
-import { filterDurationValue } from "./filterUtils";
+import { filterEmptyValue, filterDurationValue } from "./filterUtils";
 import { normalizeLocationLabel } from "./locationUtils";
-import { extractByPatterns, extractEmploymentType } from "./employmentTypeExtractor";
+import { extractEmploymentType } from "./employmentTypeExtractor";
+
+// Helper to extract metadata using regex patterns (without duration filtering for workload/language)
+function extractByPatterns(text: string, patterns: RegExp[]): string | undefined {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const trimmed = match[1].trim();
+      const filtered = filterEmptyValue(trimmed);
+      if (filtered) {
+        return filtered;
+      }
+    }
+  }
+  return undefined;
+}
 
 export interface StructuredMetadata {
   workload?: string;
@@ -26,7 +41,13 @@ export function extractSemanticMetadata(
     /pensum[:\s-]*([0-9]{1,3}\s?(?:[-–]\s?[0-9]{1,3}\s?)?%)/i,
     /employment rate[:\s-]*([0-9]{1,3}\s?(?:[-–]\s?[0-9]{1,3}\s?)?%)/i,
   ];
-  metadata.workload = extractByPatterns(text, workloadPatterns);
+  const workload = extractByPatterns(text, workloadPatterns);
+  if (workload) {
+    const filtered = filterEmptyValue(workload);
+    if (filtered) {
+      metadata.workload = filtered;
+    }
+  }
 
   // Extract employment type with proper transformation
   const employmentType = extractEmploymentType(text);
@@ -42,13 +63,20 @@ export function extractSemanticMetadata(
     /language[:\s-]*([^.\n]+)/i,
     /languages[:\s-]*([^.\n]+)/i,
   ];
-  metadata.language = extractByPatterns(text, languagePatterns);
+  const language = extractByPatterns(text, languagePatterns);
+  if (language) {
+    const filtered = filterEmptyValue(language);
+    if (filtered) {
+      metadata.language = filtered;
+    }
+  }
 
   // Location patterns
   const locationPatterns = [
     /place of work[:\s-]*([^.\n]+)/i,
     /location[:\s-]*([^.\n]+)/i,
     /workplace[:\s-]*([^.\n]+)/i,
+    /place[:\s-]*([^.\n]+)/i, // Added generic place pattern
   ];
   const semanticLocation = extractByPatterns(text, locationPatterns);
   if (semanticLocation) {

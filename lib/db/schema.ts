@@ -23,10 +23,10 @@ export const analysisRecords = sqliteTable('analysis_records', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().defaultNow(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().defaultNow(),
 
-  // Job Data 
+  // Job Data
   title: text('title').notNull(),
   company: text('company').notNull(),
-  description: text('description'),
+  description: text('description'), // Kept for backward compatibility, but deprecated
   publishedAt: text('published_at'),
   location: text('location'),
   workload: text('workload'), // 'full-time', 'part-time', 'contract', etc.
@@ -34,6 +34,10 @@ export const analysisRecords = sqliteTable('analysis_records', {
   size: text('size'), // company size: '5', '10', '20', '50', '100', '200', '500'
   companySize: text('company_size'), // additional company size info
   stack: text('stack', { mode: 'json' }).$type<string[]>().notNull(),
+  // Structured job content (new format - replaces single description field)
+  qualifications: text('qualifications', { mode: 'json' }).$type<string[]>().default([]),
+  roles: text('roles', { mode: 'json' }).$type<string[]>().default([]),
+  benefits: text('benefits', { mode: 'json' }).$type<string[]>().default([]),
 
   // LLM Analysis Results
   matchScore: real('match_score').notNull(),
@@ -117,6 +121,8 @@ export const insertAnalysisFeedbackSchema = createInsertSchema(analysisFeedback)
 export const selectAnalysisFeedbackSchema = createSelectSchema(analysisFeedback);
 
 // Export types
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 export type AnalysisRecord = typeof analysisRecords.$inferSelect;
 export type NewAnalysisRecord = typeof analysisRecords.$inferInsert;
 export type JobSearch = typeof jobSearches.$inferSelect;

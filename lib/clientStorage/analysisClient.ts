@@ -26,6 +26,14 @@ async function apiRequest(url: string, options: RequestInit = {}): Promise<Respo
 
 export const analysisClient = {
   async save(record: AnalysisRecord): Promise<AnalysisRecord> {
+    // Client-side validation to prevent test company analyses
+    const suspiciousPatterns = ['test company', 'test corp', 'test inc', 'test ltd', 'test gmbh', 'fake company'];
+    if (record.job?.company && suspiciousPatterns.some(pattern => record.job.company.toLowerCase() === pattern)) {
+      console.error('[analysisClient] ERROR - Attempted to create analysis with test company:', record.job.company);
+      console.error('[analysisClient] Stack trace:', new Error().stack);
+      throw new Error('Test company analyses are not allowed');
+    }
+
     const response = await apiRequest('/api/analyses', {
       method: 'POST',
       body: JSON.stringify(record),

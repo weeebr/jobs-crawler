@@ -1,5 +1,5 @@
-import type { RecentAnalysisSummary } from "@/lib/clientStorage";
-import { loadAnalysisRecord } from "@/lib/clientStorage/core";
+import type { RecentAnalysisSummary } from "@/lib/schemas/clientStorageSchemas";
+import { loadAnalysisRecord } from "@/lib/clientStorage/analysisRecords";
 import type { AnalysisRecord } from "@/lib/types";
 import Fuse from "fuse.js";
 

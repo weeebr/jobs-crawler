@@ -1,7 +1,9 @@
 import type { AnalysisRecord } from "@/lib/types";
+import type { AnalysisStatus } from "@/lib/schemas/clientStorageSchemas";
 
 export interface AnalysesTableProps {
   analyses: AnalysisRecord[];
+  statuses: Record<number, AnalysisStatus>;
   onStatusToggle: (id: number, status: 'interested' | 'applied') => Promise<boolean>;
   onDelete: (id: number) => Promise<boolean>;
 }

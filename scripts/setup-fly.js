@@ -68,55 +68,51 @@ async function runStep(step, command, description) {
 
 async function main() {
   try {
-    console.log("\n🔍 Step 1/5: Verifying local code quality");
-    await runStep("1", "npm run verify:fast", "Running linting, tests, and build verification");
+    console.log("\n🔍 Step 1/4: Verifying local code quality");
+    await runStep("1", "POST_VERIFY_DEPLOY=1 npm run verify:fast", "Running linting, tests, and build verification for deployment");
 
-    console.log("\n🔨 Step 2/5: Building application");
-    await runStep("2", "npm run build", "Building optimized production version");
-
-    console.log("\n🚁 Step 3/5: Checking Fly.io status");
+    console.log("\n🚁 Step 2/4: Checking Fly.io status");
     try {
-      await runStep("3", "fly status", "Checking if Fly.io app exists");
+      await runStep("2", "fly status", "Checking if Fly.io app exists");
     } catch (error) {
       console.log("  📝 Fly.io app doesn't exist, creating new app...");
-      await runStep("3", "fly launch --no-deploy", "Creating new Fly.io application");
+      await runStep("2", "fly launch --no-deploy --name jobs-crawler", "Creating new Fly.io application");
     }
 
-    console.log("\n🗄️ Step 4/5: Setting up database");
-    try {
-      await runStep("4", "fly postgres list", "Checking existing databases");
-    } catch (error) {
-      console.log("  📝 No databases found, creating PostgreSQL database...");
-      await runStep("4", "fly postgres create --name jobs-crawler-db --vm-size shared-cpu-1x --initial-cluster-size 1", "Creating PostgreSQL database");
-    }
+    console.log("\n🔧 Step 3/4: Configuring environment");
+    console.log("  📝 Using SQLite database with native Node.js deployment");
+    console.log("  📝 Database will be stored in persistent Fly.io volume");
 
-    console.log("\n📦 Step 5/5: Preparing deployment");
-    await runStep("5", "fly deploy --no-deploy", "Preparing deployment configuration");
+    console.log("\n📦 Step 4/4: Deploying to Fly.io");
+    console.log("  📝 Fly.io will handle the build process automatically");
+    await runStep("4", "fly deploy", "Deploying to Fly.io with native Node.js support");
 
     console.log("\n🎉 Setup Complete!");
     console.log("==================");
 
     if (SHOULD_DEPLOY) {
-      console.log("🚀 Deploying to Fly.io...");
+      console.log("🚀 Deploying to Fly.io with native Node.js support...");
       await runStep("Deploy", "fly deploy", "Deploying to production");
       console.log("\n🎊 Deployment successful!");
     } else {
-      console.log("📝 To deploy, run: npm run deploy:fly");
-      console.log("🔗 Or use: fly deploy");
+      console.log("📝 To deploy, run: fly deploy");
+      console.log("🔗 Or use: npm run deploy:fly");
     }
 
     console.log("\n📋 Available commands:");
-    console.log("  • npm run db:connect    - Connect to database");
-    console.log("  • npm run deploy:fly    - Deploy to Fly.io");
     console.log("  • fly logs              - View application logs");
     console.log("  • fly status            - Check app status");
+    console.log("  • fly ssh console       - Open SSH console to app");
+    console.log("  • fly scale show        - Check app scaling");
 
   } catch (error) {
     console.error("\n❌ Setup failed:", error.message);
     console.log("\n💡 Troubleshooting:");
-    console.log("  • Make sure Fly.io CLI is installed: fly --version");
+    console.log("  • Make sure Fly.io CLI is installed: fly version");
     console.log("  • Authenticate: fly auth login");
-    console.log("  • Check logs: fly logs");
+    console.log("  • Check app status: fly status");
+    console.log("  • View logs: fly logs");
+    console.log("  • Check build logs: fly logs --app jobs-crawler");
     process.exit(1);
   }
 }

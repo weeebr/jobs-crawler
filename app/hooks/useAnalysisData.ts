@@ -1,20 +1,11 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
-import {
-  getAnalysis,
-  deleteAnalysis as deleteAnalysisOp,
-  updateAnalysisStatus as updateAnalysisStatusOp,
-  markAsNewThisRun as markAsNewThisRunOp
-} from "./analysis/analysisOperations";
-import {
-  loadAnalyses as loadAnalysesOp,
-  searchByCompany as searchByCompanyOp,
-  getByStatus as getByStatusOp,
-  clearAll as clearAllOp,
-  getStats as getStatsOp
-} from "./analysis/searchOperations";
+import { useCallback } from "react";
 import { useAnalysisState } from "./analysis/useAnalysisState";
+import { useAnalysisLoader } from "./analysis/useAnalysisLoader";
+import { useAnalysisManager } from "./analysis/useAnalysisManager";
+import { useTaskManager } from "./analysis/useTaskManager";
+import { useRealtimeStorageSync } from "@/lib/clientStorage/realtimeSync/hooks";
 
 export function useAnalysisData() {
   const {
@@ -23,7 +14,7 @@ export function useAnalysisData() {
     errorMessage,
     isInitialized,
     activeTasks,
-    isStreaming,
+    isPolling,
     updateAnalyses,
     setLoading,
     setError,
@@ -31,139 +22,66 @@ export function useAnalysisData() {
     markInitialized,
     startTask,
     clearAllTasks,
+    refreshAnalyses: refreshAnalysesState,
     debugState,
   } = useAnalysisState();
 
-  // Load analyses directly from database
-  const loadAnalyses = useCallback(async (limit?: number) => {
-    setLoading(true);
-    try {
-      const records = await loadAnalysesOp(
-        limit,
-        updateAnalyses,
-        setError
-      );
-      updateAnalyses(records);
-    } catch (error) {
-      // Error already handled in the operation
-    } finally {
-      setLoading(false);
-    }
-  }, [updateAnalyses, setLoading, setError]);
+  const { statuses } = useRealtimeStorageSync();
 
-  // Initialize data on mount
-  useEffect(() => {
-    if (!isInitialized) {
-      loadAnalyses();
-      markInitialized();
-    }
-  }, [isInitialized, loadAnalyses, markInitialized]);
+  // Use focused hooks for different responsibilities
+  const loader = useAnalysisLoader({
+    updateAnalyses,
+    setLoading,
+    setError,
+    isInitialized,
+    markInitialized,
+  });
 
-  // Delete analysis
-  const deleteAnalysis = useCallback(async (id: number): Promise<boolean> => {
-    return await deleteAnalysisOp(id, () => {
-      updateAnalyses(analyses.filter(a => a.id !== id));
-    });
-  }, [updateAnalyses]);
+  const manager = useAnalysisManager({
+    updateAnalyses,
+    analyses,
+    setError,
+  });
 
-  // Update analysis status
-  const updateAnalysisStatus = useCallback(async (id: number, status: 'interested' | 'applied'): Promise<boolean> => {
-    return await updateAnalysisStatusOp(id, status, () => {
-      getStatsOp((error: Error) => setError(error.message)); // Refresh stats in background
-    });
-  }, [setError]);
+  const taskManager = useTaskManager({
+    startTask,
+    loadAnalyses: loader.loadAnalyses,
+    clearAllTasks,
+  });
 
-  // Mark analyses as new this run
-  const markAsNewThisRun = useCallback(async (ids: number[]) => {
-    await markAsNewThisRunOp(ids, () => {
-      updateAnalyses(analyses.map(a =>
-        ids.includes(a.id) ? { ...a, userInteractions: { ...a.userInteractions, isNewThisRun: true } } : a
-      ));
-    });
-  }, [updateAnalyses]);
-
-  // Get database statistics
-  const getStats = useCallback(async () => {
-    return await getStatsOp((error: Error) => setError(error.message));
-  }, [setError]);
-
-  // Search by company
-  const searchByCompany = useCallback(async (company: string) => {
-    setLoading(true);
-    try {
-      const results = await searchByCompanyOp(
-        company,
-        updateAnalyses,
-        setError
-      );
-      updateAnalyses(results);
-    } catch (error) {
-      // Error already handled in the operation
-    } finally {
-      setLoading(false);
-    }
-  }, [updateAnalyses, setLoading, setError]);
-
-  // Get by status
-  const getByStatus = useCallback(async (status: 'interested' | 'applied') => {
-    setLoading(true);
-    try {
-      const results = await getByStatusOp(
-        status,
-        updateAnalyses,
-        setError
-      );
-      updateAnalyses(results);
-    } catch (error) {
-      // Error already handled in the operation
-    } finally {
-      setLoading(false);
-    }
-  }, [updateAnalyses, setLoading, setError]);
-
-  // Clear all analyses
-  const clearAll = useCallback(async () => {
-    await clearAllOp(
-      () => updateAnalyses([]),
-      setError
-    );
-  }, [updateAnalyses, setError]);
-
-  // Enhanced startTask that refreshes data after completion
-  const enhancedStartTask = useCallback(async (searchUrl: string) => {
-    const task = await startTask(searchUrl);
-
-    // Add a small delay to allow the task to complete, then refresh
-    setTimeout(() => {
-      loadAnalyses();
-    }, 2000);
-
-    return task;
-  }, [startTask, loadAnalyses]);
+  // Refresh analyses data - can be called from outside
+  const refreshAnalyses = useCallback(async () => {
+    // Use the state refresh function which will trigger a re-render and cause loadAnalyses to be called
+    refreshAnalysesState();
+    // Also do a direct load to ensure fresh data
+    await loader.loadAnalyses();
+  }, [refreshAnalysesState, loader.loadAnalyses]);
 
   return {
     // Data
     analyses,
+    statuses,
     isLoading,
     activeTasks,
-    isStreaming,
+    isPolling,
 
     // Actions
-    startTask: enhancedStartTask,
+    startTask: taskManager.enhancedStartTask,
     clearAllTasks,
 
     // Analysis operations
-    getAnalysis,
-    deleteAnalysis,
-    updateAnalysisStatus,
-    markAsNewThisRun,
+    getAnalysis: manager.getAnalysis,
+    deleteAnalysis: manager.deleteAnalysis,
+    updateAnalysisStatus: manager.updateAnalysisStatus,
+    markAsNewThisRun: manager.markAsNewThisRun,
 
     // Data operations
-    loadAnalyses,
-    searchByCompany,
-    getByStatus,
-    getStats,
-    clearAll,
+    loadAnalyses: loader.loadAnalyses,
+    refreshAnalyses,
+    searchByCompany: loader.searchByCompany,
+    getByStatus: loader.getByStatus,
+    getStats: loader.getStats,
+    clearAll: loader.clearAll,
 
     // Utilities
     errorMessage,

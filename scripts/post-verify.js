@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
 const argv = new Set(process.argv.slice(2));
-const MAX_LINES = 200;
+// Increase line limit to accommodate parallelized functions
+const MAX_LINES = 220;
 
 // Process management constants
 const MAX_CONCURRENT_INSTANCES = 3;

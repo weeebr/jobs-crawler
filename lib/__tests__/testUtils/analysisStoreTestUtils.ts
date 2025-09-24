@@ -4,7 +4,7 @@ export const createMockAnalysis = (id: number): AnalysisRecord => ({
   id,
   job: {
     title: "Test Job",
-    company: "Test Company",
+    company: "Example Corp",
     stack: ["React", "TypeScript"],
     qualifications: ["3+ years experience"],
     roles: ["Frontend Developer"],
@@ -21,13 +21,14 @@ export const createMockAnalysis = (id: number): AnalysisRecord => ({
   },
   llmAnalysis: {
     matchScore: 80,
-    reasoning: ["Strong React experience"],
+    reasoning: ["Strong React experience", "Good TypeScript skills"], // Added second reasoning item to meet min requirement
     letters: {},
     analyzedAt: Date.now(),
     analysisVersion: "1.0"
   },
   userInteractions: {
-    interactionCount: 0
+    interactionCount: 0,
+    isNewThisRun: false
   },
   createdAt: Date.now(),
   updatedAt: Date.now()
@@ -54,7 +55,7 @@ export const createInvalidAnalysisRecord = () => ({
   },
   llmAnalysis: {
     matchScore: 80,
-    reasoning: [],
+    reasoning: [], // Invalid: empty reasoning array
     letters: {},
     analyzedAt: Date.now(),
     analysisVersion: "1.0"

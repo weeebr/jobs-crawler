@@ -1,5 +1,5 @@
-import type { RecentAnalysisSummary, FilterState } from "@/lib/clientStorage";
-import type { AnalysisStatus } from "@/lib/clientStorage";
+import type { RecentAnalysisSummary, FilterState } from "@/lib/schemas/clientStorageSchemas";
+import type { AnalysisStatus } from "@/lib/schemas/clientStorageSchemas";
 import type { DynamicOptions } from "./types";
 import { roundMatchScore } from "@/lib/matchScore";
 import { createFuzzySearch } from "./searchUtils";
@@ -98,7 +98,7 @@ export function filterAndSortAnalyses(
     const roundedScore = roundMatchScore(item.matchScore);
 
     if (filters.status !== "all") {
-      const currentStatus = statuses[item.id] ?? item.status;
+      const currentStatus = (statuses?.[item.id]) ?? item.status;
       if (currentStatus !== filters.status) {
         return false;
       }

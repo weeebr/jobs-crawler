@@ -22,18 +22,31 @@ export async function collectJobLinks(
   options: CollectJobLinksOptions = {},
 ): Promise<{ jobLinks: string[]; fetchedPages: number }> {
   const initialUrl = new URL(searchUrl);
-  const initialPage = parseNonNegativeInt(initialUrl.searchParams.get("page")) ?? 1;
+  const initialPage = (() => {
+    const value = initialUrl.searchParams.get("page");
+    if (!value) return null;
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  })() ?? 1;
   const normalizedInitialUrl = initialUrl.toString();
 
   const seen = new Set<string>();
   let fetchedPages = 0;
 
-  const fetchOptions = buildFetchOptions(options.fetchOptions);
+  const fetchOptions: FetchJobAdOptions = {
+    timeoutMs: options.fetchOptions?.timeoutMs ?? JOB_PIPELINE_DEFAULTS.timeoutMs,
+    retryCount: options.fetchOptions?.retryCount ?? JOB_PIPELINE_DEFAULTS.retryCount,
+    clearJobAdData: options.fetchOptions?.clearJobAdData ?? false,
+  };
   const maxPages = options.maxPages ?? JOB_PIPELINE_DEFAULTS.maxSearchPages;
 
   for (let offset = 0; offset < maxPages; offset += 1) {
     const pageNumber = initialPage + offset;
-    const pageUrl = offset === 0 ? normalizedInitialUrl : buildPageUrl(normalizedInitialUrl, pageNumber);
+    const pageUrl = offset === 0 ? normalizedInitialUrl : (() => {
+      const url = new URL(normalizedInitialUrl);
+      url.searchParams.set("page", String(pageNumber));
+      return url.toString();
+    })();
 
     options.onProgress?.({ message: `Scanning page ${pageNumber} for job links...`, total: maxPages, completed: offset });
 
@@ -69,45 +82,56 @@ export async function analyzeJob(
   source: JobHtmlSource,
   cvProfile: CVProfile,
   options: AnalyzeJobOptions = {},
+  apiKey?: string,
 ): Promise<AnalysisRecord> {
-  throwIfAborted(options.abortSignal);
-  const { html, sourceUrl } = await resolveJobHtml(source, options);
-  throwIfAborted(options.abortSignal);
+  if (options.abortSignal?.aborted) throw new Error("Job analysis aborted");
+
+  console.info(`[jobPipeline] Starting analysis for ${source.jobUrl || 'unknown URL'}`);
+
+  const { html, sourceUrl } = source.jobUrl ? await (async () => {
+    const fetchOptions: FetchJobAdOptions = {
+      timeoutMs: options.fetchOptions?.timeoutMs ?? JOB_PIPELINE_DEFAULTS.timeoutMs,
+      retryCount: options.fetchOptions?.retryCount ?? JOB_PIPELINE_DEFAULTS.retryCount,
+      clearJobAdData: options.clearJobAdData ?? false,
+    };
+    return { html: await fetchJobAd(source.jobUrl!, fetchOptions), sourceUrl: source.jobUrl };
+  })() : source.rawHtml ? { html: source.rawHtml } : (() => { throw new Error("No job content provided"); })();
+  if (options.abortSignal?.aborted) throw new Error("Job analysis aborted");
+
+  console.info(`[jobPipeline] Fetched HTML for ${sourceUrl}, length: ${html.length}`);
 
   // Parse job ad with skip handling
   let job;
   try {
     job = await parseJobAd(html, { sourceUrl });
+    console.info(`[jobPipeline] Successfully parsed job: ${job.title} at ${job.company}`);
   } catch (error) {
+    console.error(`[jobPipeline] Failed to parse job ad for ${sourceUrl}:`, error);
     if (error instanceof Error && error.message.startsWith('SKIP_JOB:')) {
-      console.warn(`[jobPipeline] Skipping job due to empty title: ${sourceUrl}`);
       throw new Error(`Job skipped due to empty title: ${sourceUrl}`);
     }
-    throw error; // Re-throw other errors
+    throw error;
   }
 
-  const normalizedJob = normalizeFetchedJob(job, sourceUrl);
-  throwIfAborted(options.abortSignal);
+  const normalizedJob = jobAdFetchedSchema.parse({ ...job, fetchedAt: Date.now(), sourceDomain: sourceUrl ? new URL(sourceUrl).hostname : undefined });
+  if (options.abortSignal?.aborted) throw new Error("Job analysis aborted");
   const comparison = compareCv(normalizedJob, cvProfile);
-  throwIfAborted(options.abortSignal);
+  if (options.abortSignal?.aborted) throw new Error("Job analysis aborted");
   const ranking = await rankMatchScore({
     job: normalizedJob,
     cv: cvProfile,
     heuristics: comparison,
   });
 
-  const llmAnalysisInput = {
+  const llmAnalysis = llmAnalysisSchema.parse({
     matchScore: ranking.matchScore,
     reasoning: comparison.reasoning,
     letters: {},
     analyzedAt: Date.now(),
     analysisVersion: "1.0",
-  } satisfies LLMAnalysis;
+  } satisfies LLMAnalysis);
 
-  const userInteractionsInput = { interactionCount: 0 } satisfies UserInteractions;
-
-  const llmAnalysis = llmAnalysisSchema.parse(llmAnalysisInput);
-  const userInteractions = userInteractionsSchema.parse(userInteractionsInput);
+  const userInteractions = userInteractionsSchema.parse({ interactionCount: 0, isNewThisRun: false } satisfies UserInteractions);
 
   const recordToSave = {
     id: Date.now(),
@@ -115,8 +139,8 @@ export async function analyzeJob(
     cv: cvProfile,
     llmAnalysis,
     userInteractions,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   } as const;
 
   // Additional validation to ensure title is not lost
@@ -129,47 +153,47 @@ export async function analyzeJob(
     throw new Error(`Cannot save record with null/empty title: ${recordToSave.job.title}`);
   }
 
-  const record = await analysisStorage.save(recordToSave);
+  const record = await analysisStorage.save(apiKey || "default-user", recordToSave);
 
   console.info(`[jobPipeline] analyzed job id=${record.id} score=${llmAnalysis.matchScore} source=${ranking.source}`);
 
   return record;
 }
 
-function buildFetchOptions(overrides?: Partial<FetchJobAdOptions>): FetchJobAdOptions {
-  return {
-    timeoutMs: overrides?.timeoutMs ?? JOB_PIPELINE_DEFAULTS.timeoutMs,
-    retryCount: overrides?.retryCount ?? JOB_PIPELINE_DEFAULTS.retryCount,
-    clearJobAdData: overrides?.clearJobAdData ?? false,
-  } satisfies FetchJobAdOptions;
-}
+export async function analyzeJobsInParallel(
+  jobLinks: string[],
+  cvProfile: CVProfile,
+  options: AnalyzeJobOptions = {},
+  apiKey?: string,
+): Promise<{ records: AnalysisRecord[]; errors: { url: string; message: string }[] }> {
+  const records: AnalysisRecord[] = [];
+  const errors: { url: string; message: string }[] = [];
 
-async function resolveJobHtml(source: JobHtmlSource, options: AnalyzeJobOptions): Promise<{ html: string; sourceUrl?: string }> {
-  if (source.jobUrl) {
-    const fetchOptions = buildFetchOptions({ ...(options.fetchOptions ?? {}), clearJobAdData: options.clearJobAdData });
-    const html = await fetchJobAd(source.jobUrl, fetchOptions);
-    return { html, sourceUrl: source.jobUrl };
+  const analysisPromises = jobLinks.map(async (link, index) => {
+    if (options.abortSignal?.aborted) throw new Error("Job analysis aborted");
+
+    try {
+      console.info(`[jobPipeline] Queueing analysis for job ${index + 1}/${jobLinks.length}: ${link}`);
+      const record = await analyzeJob({ jobUrl: link }, cvProfile, options, apiKey);
+      console.info(`[jobPipeline] Successfully analyzed job ${index + 1}/${jobLinks.length}: ${record.job.title} at ${record.job.company}`);
+      return record;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown analysis failure";
+      console.warn(`[jobPipeline] Failed to analyze job ${index + 1}/${jobLinks.length}: ${link}`, error);
+      throw { url: link, message };
+    }
+  });
+
+  // Wait for all analyses to complete, handling failures gracefully
+  const results = await Promise.allSettled(analysisPromises);
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      records.push(result.value);
+    } else {
+      errors.push(result.reason);
+    }
   }
-  if (source.rawHtml) return { html: source.rawHtml };
-  throw new Error("No job content provided");
-}
 
-function normalizeFetchedJob(job: JobAdParsed, sourceUrl?: string): JobAdFetched {
-  return jobAdFetchedSchema.parse({ ...job, fetchedAt: Date.now(), sourceDomain: sourceUrl ? new URL(sourceUrl).hostname : undefined });
-}
-
-function buildPageUrl(baseUrl: string, pageNumber: number): string {
-  const url = new URL(baseUrl);
-  url.searchParams.set("page", String(pageNumber));
-  return url.toString();
-}
-
-function parseNonNegativeInt(value: string | null): number | null {
-  if (!value) return null;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function throwIfAborted(signal: AbortSignal | undefined) {
-  if (signal?.aborted) throw new Error("Job analysis aborted");
+  console.info(`[jobPipeline] Parallel analysis complete: ${records.length} successful, ${errors.length} failed`);
+  return { records, errors };
 }

@@ -1,8 +1,12 @@
 import { type AnalysisRecordsTable, type UsersTable, type StorageState } from './analysisStorageTypes';
-import { createStorageInterface, createUserManager } from './analysisStorageInterface';
+import { getOrCreateUser } from './db/users';
+import { eq } from 'drizzle-orm';
 
 // Import shared state from a separate module
 import { getStorageState, setStorageState } from './analysisStorageState';
+
+// Import the consolidated analysis storage
+import { analysisStorageCompat } from './db/analysisStorageConsolidated';
 
 // Initialize database storage synchronously
 export async function initializeStorage() {
@@ -40,14 +44,34 @@ export async function initializeStorage() {
     }
 
     // Create user manager first
-    const getOrCreateUser = createUserManager(db, users, hashApiKey);
+    const userManager = async (apiKey: string) => {
+      const apiKeyHash = hashApiKey(apiKey);
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.apiKeyHash, apiKeyHash))
+        .limit(1);
 
-    // Create storage interface
-    const dbStorage = createStorageInterface(db, analysisRecords, users, hashApiKey, getOrCreateUser);
+      if (existingUser.length > 0) {
+        return existingUser[0];
+      }
 
+      const now = new Date();
+      const newUser = await db.insert(users).values({
+        apiKeyHash,
+        createdAt: now,
+        lastActiveAt: now,
+        totalAnalyses: 0,
+        preferredModel: 'gpt-4o-mini',
+      }).returning();
+
+      return newUser[0];
+    };
+
+    // Use the consolidated analysis storage
     setStorageState({
-      dbStorage,
-      getOrCreateUser,
+      dbStorage: analysisStorageCompat,
+      getOrCreateUser: userManager,
       isInitialized: true,
       initializationError: null
     });
@@ -67,5 +91,5 @@ export async function initializeStorage() {
 
 
 // Import required functions
-import { and, eq, desc, like } from "drizzle-orm";
+import { and, desc, like } from "drizzle-orm";
 import { sql } from "drizzle-orm";

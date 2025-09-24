@@ -42,7 +42,16 @@ export function selectCompany($: ReturnType<typeof load>): string | undefined {
     $("[data-company]").first().text() ||
     $(".company, .company-name").first().text();
 
-  return (structured && structured.trim()) || undefined;
+  if (structured && structured.trim()) return structured.trim();
+
+  // Fallback: try to extract company from title
+  const title = $('title').text() || '';
+  const titleMatch = title.match(/at (.+?) - jobs\.ch/);
+  if (titleMatch && titleMatch[1]) {
+    return titleMatch[1].trim();
+  }
+
+  return undefined;
 }
 
 export function guessCompanyFromUrl(url?: string): string | undefined {

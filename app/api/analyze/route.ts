@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createApiErrorResponse, createValidationErrorResponse, createSuccessResponse } from "@/lib/apiUtils";
+import { headers } from "next/headers";
 
-import { analyzeJob, collectJobLinks, JOB_PIPELINE_DEFAULTS } from "@/lib/jobPipeline";
+import { analyzeJob, analyzeJobsInParallel, collectJobLinks, JOB_PIPELINE_DEFAULTS } from "@/lib/jobPipeline";
 import { loadCvFromSources } from "@/lib/cvLoader";
 import {
   cvProfileSchema,
@@ -43,6 +44,13 @@ const analyzeRequestSchema = z.object({
 
 // Response type is now defined in schemas.ts
 
+// Helper to get API key from request headers
+async function getApiKeyFromRequest(): Promise<string> {
+  const headersList = await headers();
+  const apiKey = headersList.get('x-api-key') || headersList.get('authorization')?.replace('Bearer ', '');
+  return apiKey || process.env.NEXT_PUBLIC_ANALYSIS_API_KEY || "default-user";
+}
+
 export async function POST(request: NextRequest) {
   let payload: z.infer<typeof analyzeRequestSchema>;
 
@@ -58,8 +66,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Get API key from request
+    const apiKey = await getApiKeyFromRequest();
+
     let cvProfile: CVProfile;
-    
+
     if (payload.cv) {
       cvProfile = payload.cv;
     } else {
@@ -78,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (payload.searchUrl) {
-      const searchResult = await analyzeSearchUrl(payload.searchUrl, cvProfile, payload.clearJobAdData);
+      const searchResult = await analyzeSearchUrl(payload.searchUrl, cvProfile, payload.clearJobAdData, apiKey);
       return NextResponse.json(searchResult);
     }
 
@@ -92,6 +103,7 @@ export async function POST(request: NextRequest) {
           retryCount: JOB_PIPELINE_DEFAULTS.retryCount,
         },
       },
+      apiKey,
     );
 
     const records: AnalysisRecord[] = [singleResult];
@@ -105,6 +117,7 @@ async function analyzeSearchUrl(
   searchUrl: string,
   cvProfile: CVProfile,
   clearJobAdData?: boolean,
+  apiKey?: string,
 ): Promise<AnalyzeResponse> {
   const { jobLinks, fetchedPages } = await collectJobLinks(searchUrl, {
     fetchOptions: {
@@ -124,30 +137,19 @@ async function analyzeSearchUrl(
     return { records: [] };
   }
 
-  const records: AnalysisRecord[] = [];
-  const errors: { url: string; message: string }[] = [];
-
-  for (const link of jobLinks) {
-    try {
-      const record = await analyzeJob(
-        { jobUrl: link },
-        cvProfile,
-        {
-          clearJobAdData,
-          fetchOptions: {
-            timeoutMs: JOB_PIPELINE_DEFAULTS.timeoutMs,
-            retryCount: JOB_PIPELINE_DEFAULTS.retryCount,
-          },
-        },
-      );
-      records.push(record);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown analysis failure";
-      console.warn(`[api/analyze] failed for ${link}`, error);
-      errors.push({ url: link, message });
-    }
-  }
+  // Use parallel processing for job analysis
+  const { records, errors } = await analyzeJobsInParallel(
+    jobLinks,
+    cvProfile,
+    {
+      clearJobAdData,
+      fetchOptions: {
+        timeoutMs: JOB_PIPELINE_DEFAULTS.timeoutMs,
+        retryCount: JOB_PIPELINE_DEFAULTS.retryCount,
+      },
+    },
+    apiKey,
+  );
 
   if (records.length === 0) {
     throw new Error("Failed to analyze any job ads from the search page");

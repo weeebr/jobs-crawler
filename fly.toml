@@ -1,12 +1,11 @@
-# fly.toml app configuration file generated for jobs-crawler on 2025-09-24T07:30:15+02:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
+# fly.toml app configuration for jobs-crawler
+# Native Node.js deployment (no Docker needed)
 
 app = 'jobs-crawler'
 primary_region = 'fra'
 
 [build]
+  builder = "heroku/builder:22"
 
 [http_service]
   internal_port = 3000
@@ -20,3 +19,15 @@ primary_region = 'fra'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+
+[env]
+  NODE_ENV = 'production'
+
+# Database configuration for SQLite
+[mounts]
+  source = "data"
+  destination = "/app/data"
+  initial_size = "1GB"
+
+[processes]
+  app = "npm start"

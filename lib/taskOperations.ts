@@ -1,7 +1,7 @@
 "use client";
 
 import { requireBackgroundTask } from "./contractValidation";
-import type { BackgroundTask } from "./schemas/taskSchemas";
+import type { BackgroundTask } from "./schemas/system";
 
 export interface ClearAllTasksOptions {
   preserveAnalyses?: boolean;
@@ -10,7 +10,7 @@ export interface ClearAllTasksOptions {
 export interface TaskOperations {
   validateApiKey: (onError?: (message: string) => void) => void;
   createTask: (searchUrl: string) => Promise<{ task: BackgroundTask }>;
-  startStream: (searchUrl: string, taskId: string, clearJobAdData?: boolean) => Promise<Response>;
+  startAnalysis: (searchUrl: string, taskId: string, clearJobAdData?: boolean) => Promise<Response>;
   cancelTask: (taskId: string) => Promise<boolean>;
   clearAllTasks: (tasks: BackgroundTask[], options?: ClearAllTasksOptions) => Promise<void>;
 }
@@ -38,15 +38,17 @@ export function createTaskOperations(): TaskOperations {
     return { task };
   };
 
-  const startStream = async (searchUrl: string, taskId: string, clearJobAdData?: boolean) => {
-    const response = await fetch('/api/analyze/stream', {
+  const startAnalysis = async (searchUrl: string, taskId: string, clearJobAdData?: boolean) => {
+    // For polling-based approach, we just trigger the analysis
+    // The actual analysis happens in the background and is polled via /api/tasks/[id]/progress
+    const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ searchUrl, taskId, clearJobAdData }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to start streaming analysis');
+      throw new Error('Failed to start analysis');
     }
 
     return response;
@@ -91,7 +93,7 @@ export function createTaskOperations(): TaskOperations {
   return {
     validateApiKey,
     createTask,
-    startStream,
+    startAnalysis,
     cancelTask,
     clearAllTasks,
   };

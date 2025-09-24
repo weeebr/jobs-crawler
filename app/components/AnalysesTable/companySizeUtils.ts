@@ -1,4 +1,4 @@
-import type { RecentAnalysisSummary } from "@/lib/clientStorage";
+import type { RecentAnalysisSummary } from "@/lib/schemas/clientStorageSchemas";
 
 const COMPANY_SIZE_BUCKETS = [5, 10, 20, 50, 100, 200, 500] as const;
 

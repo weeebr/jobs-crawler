@@ -30,7 +30,8 @@ describe("Analysis Validation - Critical Data Integrity", () => {
       analysisVersion: "1.0"
     },
     userInteractions: {
-      interactionCount: 0
+      interactionCount: 0,
+      isNewThisRun: false
     },
     createdAt: Date.now(),
     updatedAt: Date.now()

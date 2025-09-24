@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     const { ids }: { ids: number[] } = await request.json();
 
-    await analysisStorage.markAsNewThisRun(ids);
+    await analysisStorage.markAsNewThisRun(apiKey, ids);
 
     console.info(`[api/analyses/mark-new] marked ${ids.length} analyses as new`);
 

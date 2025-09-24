@@ -1,9 +1,5 @@
-// Re-export all schemas from organized modules
+// Re-export all schemas from consolidated modules
+export * from "./schemas/core";
+export * from "./schemas/system";
 export * from "./schemas/commonSchemas";
-export * from "./schemas/jobSchemas";
-export * from "./schemas/cvSchemas";
-export * from "./schemas/analysisSchemas";
-export * from "./schemas/recordSchemas";
-export * from "./schemas/taskSchemas";
 export * from "./schemas/clientStorageSchemas";
-export * from "./schemas/apiSchemas";

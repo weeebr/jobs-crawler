@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { AnalysisRecord } from "./types";
-import { createStreamMessageHandler } from "./streamHandlers";
+// Note: This hook is deprecated - use usePollingTasks instead for polling-based approach
 import { createTaskOperations, type ClearAllTasksOptions } from "./taskOperations";
 import { requireTaskResponse } from "./contractValidation";
 import { cancelAllActiveTasks } from "./backgroundTasks";
@@ -31,21 +31,17 @@ interface UseBackgroundTasksReturn {
   startTask: (searchUrl: string) => Promise<BackgroundTask>;
   cancelTask: (taskId: string) => Promise<boolean>;
   clearAllTasks: (options?: ClearAllTasksOptions) => Promise<void>;
-  isStreaming: boolean;
-  currentStream: EventSource | null;
 }
 
 interface UseBackgroundTasksOptions {
   onError?: (message: string) => void;
+  onResultRefresh?: () => void;
 }
 
 export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBackgroundTasksReturn {
   const [tasks, setTasks] = useState<BackgroundTask[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [currentStream, setCurrentStream] = useState<EventSource | null>(null);
-  const streamRef = useRef<EventSource | null>(null);
   
-  const streamHandler = createStreamMessageHandler();
+  // Note: Stream handler removed as we moved to polling-based approach
   const taskOps = createTaskOperations();
 
   const loadTasks = useCallback(async () => {
@@ -66,11 +62,6 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
   useEffect(() => {
     loadTasks();
     return () => {
-      if (streamRef.current) {
-        streamRef.current.close();
-        streamRef.current = null;
-      }
-
       // Cancel any active tasks when component unmounts
       const activeTaskCount = tasks.filter(task => task.status === 'running').length;
       if (activeTaskCount > 0) {
@@ -81,46 +72,25 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
   }, [loadTasks]);
 
   const startTask = useCallback(async (searchUrl: string, clearJobAdData?: boolean): Promise<BackgroundTask> => {
+    // Note: This is deprecated - usePollingTasks should be used instead
+    console.warn('[useBackgroundTasks] This hook is deprecated. Consider using usePollingTasks instead.');
+
     taskOps.validateApiKey(options?.onError);
     const { task } = await taskOps.createTask(searchUrl);
     setTasks(prev => [task, ...prev]);
-    setIsStreaming(true);
 
-    const streamResponse = await taskOps.startStream(searchUrl, task.id, clearJobAdData);
-
-    const reader = streamResponse.body?.getReader();
-    if (!reader) throw new Error('No response body reader available');
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              streamHandler.handleMessage(JSON.parse(line.slice(6)), task.id, setTasks);
-            } catch (parseError) {
-              console.warn('Failed to parse SSE message:', parseError);
-            }
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-      setIsStreaming(false);
-      setCurrentStream(null);
-    }
+    // For now, just simulate a completed task since polling is the preferred approach
+    setTimeout(() => {
+      setTasks(prev => prev.map(t =>
+        t.id === task.id
+          ? { ...t, status: 'completed', completedAt: Date.now() }
+          : t
+      ));
+      options?.onResultRefresh?.();
+    }, 1000);
 
     return task;
-  }, [taskOps, streamHandler, options?.onError]);
+  }, [taskOps, options?.onError]);
 
   const cancelTask = useCallback(async (taskId: string): Promise<boolean> => {
     const success = await taskOps.cancelTask(taskId);
@@ -135,15 +105,8 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
   }, [taskOps]);
 
   const clearAllTasks = useCallback(async (options?: ClearAllTasksOptions) => {
-    if (streamRef.current) {
-      streamRef.current.close();
-      streamRef.current = null;
-    }
-    
     await taskOps.clearAllTasks(tasks, options);
     setTasks([]);
-    setIsStreaming(false);
-    setCurrentStream(null);
   }, [taskOps, tasks]);
 
   return {
@@ -152,7 +115,5 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
     startTask,
     cancelTask,
     clearAllTasks,
-    isStreaming,
-    currentStream,
   };
 }

@@ -1,4 +1,4 @@
-import type { FilterState } from "@/lib/clientStorage";
+import type { FilterState } from "@/lib/schemas/clientStorageSchemas";
 import type { DynamicOptions } from "./types";
 import { SCORE_FILTERS, STATUS_FILTERS, SORT_OPTIONS } from "./types";
 

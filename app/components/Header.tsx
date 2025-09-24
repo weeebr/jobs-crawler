@@ -56,7 +56,7 @@ export function Header({ progressLabel, onRefetch, isPending }: HeaderProps) {
               disabled={isPending}
               className="text-xs px-3 py-1.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isPending ? "Refetching..." : "Refresh Data"}
+              {isPending ? "Resetting..." : "Reset Data"}
             </button>
           </div>
         </div>
@@ -79,7 +79,7 @@ export function Header({ progressLabel, onRefetch, isPending }: HeaderProps) {
                 disabled={isPending}
                 className="block w-full px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >
-                {isPending ? "Refetching..." : "Refresh Data"}
+                {isPending ? "Resetting..." : "Reset Data"}
               </button>
             </div>
           </div>

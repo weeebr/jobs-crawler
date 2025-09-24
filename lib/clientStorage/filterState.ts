@@ -2,6 +2,8 @@ import type { FilterState } from "./types";
 import { filterStateSchema } from "../schemas";
 import { FILTER_STATE_KEY, DEFAULT_FILTER_STATE, isBrowser } from "./types";
 
+export { DEFAULT_FILTER_STATE };
+
 export function loadFilterState(): FilterState {
   if (!isBrowser()) return DEFAULT_FILTER_STATE;
   try {

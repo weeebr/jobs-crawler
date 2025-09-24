@@ -102,7 +102,7 @@ export async function incrementUserAnalysisCount(apiKey: string): Promise<void> 
   await db
     .update(users)
     .set({
-      totalAnalyses: user.totalAnalyses + 1,
+      totalAnalyses: (user.totalAnalyses || 0) + 1,
       lastActiveAt: new Date(),
     })
     .where(eq(users.id, user.id));

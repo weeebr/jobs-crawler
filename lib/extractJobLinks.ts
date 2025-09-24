@@ -6,14 +6,24 @@ export function extractJobLinks(html: string, baseUrl: string): string[] {
   const $ = load(html);
   const resolved = new Set<string>();
 
+  console.info(`[extractJobLinks] searching for job links in ${baseUrl}`);
+  console.info(`[extractJobLinks] found ${$(DETAIL_SELECTOR).length} potential job links`);
+
   $(DETAIL_SELECTOR).each((_, element) => {
     const href = $(element).attr("href");
     if (!href) return;
+
     const absolute = normalizeUrl(href, baseUrl);
-    if (!absolute) return;
+    if (!absolute) {
+      console.warn(`[extractJobLinks] failed to normalize URL: ${href}`);
+      return;
+    }
+
+    console.info(`[extractJobLinks] extracted job URL: ${absolute}`);
     resolved.add(absolute);
   });
 
+  console.info(`[extractJobLinks] returning ${resolved.size} unique job URLs`);
   return Array.from(resolved);
 }
 

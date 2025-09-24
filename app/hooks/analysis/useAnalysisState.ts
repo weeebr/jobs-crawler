@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { AnalysisRecord } from "@/lib/types";
-import { useBackgroundTasks } from "@/lib/useBackgroundTasks";
+import { usePollingTasks } from "@/lib/usePollingTasks";
 import { usePageUnload } from "@/lib/usePageUnload";
 import { cancelAllActiveTasks } from "@/lib/backgroundTasks";
 
@@ -10,15 +10,24 @@ export function useAnalysisState() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const { tasks, startTask, clearAllTasks, isStreaming } = useBackgroundTasks({
-    onError: (message) => setErrorMessage(message)
-  });
-
-  const activeTasks = tasks.filter(task => task.status === 'running');
-
+  // Define updateAnalyses first to avoid hoisting issues
   const updateAnalyses = useCallback((newAnalyses: AnalysisRecord[]) => {
     setAnalyses(newAnalyses);
   }, []);
+
+  // Create refresh function after updateAnalyses is defined
+  const refreshAnalyses = useCallback(() => {
+    // Force a refresh by triggering loadAnalyses again
+    // This will update the analyses state with fresh data from the database
+    updateAnalyses([...analyses]); // This will trigger a re-render and cause useAnalysisData to reload
+  }, [analyses, updateAnalyses]);
+
+  const { tasks, startTask, clearAllTasks, isPolling } = usePollingTasks({
+    onError: (message) => setErrorMessage(message),
+    onResultRefresh: refreshAnalyses
+  });
+
+  const activeTasks = tasks.filter(task => task.status === 'running');
 
   const setLoading = useCallback((loading: boolean) => {
     setIsLoading(loading);
@@ -40,11 +49,11 @@ export function useAnalysisState() {
     console.info('[useAnalysisState] current state:', {
       analysesCount: analyses.length,
       isLoading,
-      isStreaming,
+      isPolling,
       tasksCount: tasks.length,
       errorMessage
     });
-  }, [analyses.length, isLoading, isStreaming, tasks.length, errorMessage]);
+  }, [analyses.length, isLoading, isPolling, tasks.length, errorMessage]);
 
   // Handle page unload to cancel all running tasks
   const handlePageUnload = useCallback(async () => {
@@ -65,7 +74,7 @@ export function useAnalysisState() {
     errorMessage,
     isInitialized,
     activeTasks,
-    isStreaming,
+    isPolling,
 
     // State setters
     updateAnalyses,
@@ -78,6 +87,9 @@ export function useAnalysisState() {
     tasks,
     startTask,
     clearAllTasks,
+
+    // Refresh function
+    refreshAnalyses,
 
     // Utilities
     debugState,

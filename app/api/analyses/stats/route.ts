@@ -15,7 +15,7 @@ export async function GET(_request: Request) {
     const apiKey = await getApiKeyFromRequest();
     console.info(`[api/analyses/stats] fetching stats for API key: ${apiKey.substring(0, 8)}...`);
 
-    const stats = await analysisStorage.getStats();
+    const stats = await analysisStorage.getStats(apiKey);
 
     console.info(`[api/analyses/stats] returning stats`);
 

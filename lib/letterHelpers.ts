@@ -19,7 +19,7 @@ interface LetterResult {
 }
 
 export { OPENAI_BASE_URL, OPENAI_MODEL };
-export type { GenerateLetterInput, LetterResult, LetterLanguage };
+export type { GenerateLetterInput, LetterResult };
 
 function buildRequestPayload({ job, cv, heuristics, language }: GenerateLetterInput) {
   const system =

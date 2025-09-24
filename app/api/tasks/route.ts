@@ -7,6 +7,7 @@ import {
   cancelTask,
   cleanupOldTasks
 } from "@/lib/backgroundTasks";
+import { startBackgroundTaskProcessor } from "@/lib/backgroundTaskProcessor";
 import { taskResponseSchema, type TaskResponse } from "@/lib/schemas";
 
 const taskQuerySchema = z.object({
@@ -72,10 +73,13 @@ export async function POST(request: NextRequest) {
     
     const { searchUrl } = parsed.data;
     const task = createBackgroundTask(searchUrl);
-    
+
+    // Start the background processor
+    startBackgroundTaskProcessor(task.id);
+
     // Validate task before sending
     const validatedTask = taskResponseSchema.parse({ tasks: [task] });
-    return NextResponse.json({ task: validatedTask.tasks[0] });
+    return NextResponse.json(validatedTask);
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to create task' },

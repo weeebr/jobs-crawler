@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 import { analysisStorage } from "@/lib/analysisStorageHandler";
 import type { AnalysisRecord } from "@/lib/types";
 
 interface Params {
   params: { id: string };
+}
+
+// Helper to get API key from request headers
+async function getApiKeyFromRequest(): Promise<string> {
+  const headersList = await headers();
+  const apiKey = headersList.get('x-api-key') || headersList.get('authorization')?.replace('Bearer ', '');
+  return apiKey || process.env.NEXT_PUBLIC_ANALYSIS_API_KEY || "default-user";
 }
 
 export async function GET(_request: Request, { params }: Params) {
@@ -14,12 +22,13 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const record = await analysisStorage.getById(id);
+    const apiKey = await getApiKeyFromRequest();
+    const record = await analysisStorage.getById(apiKey, id);
     if (!record) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json(record);
+    return NextResponse.json({ analysis: record });
   } catch (error) {
     console.error(`[api/analysis/${id}] error fetching record:`, error);
     return NextResponse.json({ error: "Failed to fetch record" }, { status: 500 });
@@ -33,14 +42,17 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   try {
+    const apiKey = await getApiKeyFromRequest();
     const updates: Partial<AnalysisRecord> = await request.json();
-    const updated = await analysisStorage.update(id, updates);
+
+    // Update the record with client format updates
+    const updated = await analysisStorage.update(apiKey, id, updates);
 
     if (!updated) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json({ analysis: updated });
   } catch (error) {
     console.error(`[api/analysis/${id}] error updating record:`, error);
     return NextResponse.json({ error: "Failed to update record" }, { status: 500 });
@@ -57,8 +69,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
 
   try {
-    console.log(`[api/analysis/${id}] Attempting to delete from unified storage`);
-    const removed = await analysisStorage.remove(id);
+    const apiKey = await getApiKeyFromRequest();
+    console.log(`[api/analysis/${id}] Attempting to delete from unified storage for API key: ${apiKey.substring(0, 8)}...`);
+    const removed = await analysisStorage.remove(apiKey, id);
     console.log(`[api/analysis/${id}] Delete result:`, removed);
 
     if (!removed) {

@@ -73,7 +73,7 @@ export async function runUserStatisticsUpdateTests(testResults: TestResult[]): P
 
     testResults.push({
       testName: "User statistics update",
-      passed: updatedStats1 !== null && updatedStats2 !== null && updatedStats1.totalAnalyses >= 1 && updatedStats2.totalAnalyses >= 1,
+      passed: updatedStats1 !== null && updatedStats2 !== null && (updatedStats1.totalAnalyses || 0) >= 1 && (updatedStats2.totalAnalyses || 0) >= 1,
       message: `User 1 now has ${updatedStats1?.totalAnalyses || 0} analyses, User 2 now has ${updatedStats2?.totalAnalyses || 0} analyses`
     });
   } catch (error) {

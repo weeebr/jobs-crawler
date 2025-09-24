@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 
 import { AnalysesTable } from "./components/AnalysesTable";
 import { JobSearchForm } from "./components/JobSearchForm";
@@ -11,6 +11,7 @@ import { ProgressBar } from "./components/ProgressBar";
 import { ErrorToast } from "./components/ErrorToast";
 import { useAnalysisData } from "./hooks/useAnalysisData";
 import { useProgressTracking } from "./hooks/useProgressTracking";
+import { useTaskCancellation } from "./hooks/useTaskCancellation";
 import { getConfig } from "./lib/configStore";
 import { checkApiKeyAndThrow } from "./lib/apiKeyValidation";
 
@@ -28,10 +29,12 @@ export default function HomePage() {
 
   const {
     analyses,
+    statuses,
     isLoading,
     activeTasks,
-    isStreaming,
+    isPolling,
     loadAnalyses,
+    refreshAnalyses,
     updateAnalysisStatus,
     deleteAnalysis,
     errorMessage,
@@ -39,11 +42,20 @@ export default function HomePage() {
     getStats,
     startTask,
     clearAllTasks,
+    clearAll,
   } = useAnalysisData();
 
 
   const { aggregatedProgress, progressLabel, showLoadingBar, progressBarRef } =
-    useProgressTracking(activeTasks, isPending, isStreaming);
+    useProgressTracking(activeTasks, isPending, isPolling);
+
+  // Cancel all running background tasks when page is unloaded (refresh, close, navigate)
+  useTaskCancellation();
+
+  // Create refresh function for polling results
+  const handleResultRefresh = useCallback(async () => {
+    await refreshAnalyses();
+  }, [refreshAnalyses]);
 
   const canSubmit = jobUrl.trim().length > 0;
 
@@ -93,15 +105,14 @@ export default function HomePage() {
     }
 
     try {
-      // Clear existing data and reload from database
-      await clearAllTasks();
-      await loadAnalyses();
-      console.info('[home] refetched data from database');
+      // Clear all fetched job ads from database
+      await clearAll();
+      console.info('[home] reset all data - cleared all fetched job ads');
     } catch (refetchError) {
       const message =
         refetchError instanceof Error
           ? refetchError.message
-          : "Failed to refetch data";
+          : "Failed to reset data";
       setError(message);
     }
   }
@@ -150,7 +161,7 @@ export default function HomePage() {
                 onJobUrlChange={setJobUrl}
                 onSubmit={handleSubmit}
                 canSubmit={canSubmit}
-                isPending={isPending || isStreaming}
+                isPending={isPending || isPolling}
               />
             </div>
           </div>
@@ -164,21 +175,11 @@ export default function HomePage() {
         {/* Analyses Table */}
         {analyses.length > 0 && !isLoading && (
           <div className="mt-8 sm:mt-12">
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">Your Job Analyses</h2>
-                  <p className="text-sm sm:text-base text-neutral-600 mt-1">Track your career opportunities and match scores</p>
-                </div>
-                <div className="text-sm text-neutral-500">
-                  {analyses.length} of {analyses.length} analyses
-                </div>
-              </div>
-            </div>
+            
 
             <AnalysesTable
               analyses={analyses}
+              statuses={statuses}
               onStatusToggle={updateAnalysisStatus}
               onDelete={deleteAnalysis}
             />

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const apiKey = await getApiKeyFromRequest();
     console.info(`[api/analyses/search] searching for "${company}" for API key: ${apiKey.substring(0, 8)}...`);
 
-    const analyses = await analysisStorage.searchByCompany(company);
+    const analyses = await analysisStorage.searchByCompany(apiKey, company);
 
     console.info(`[api/analyses/search] found ${analyses.length} results for "${company}"`);
 

@@ -6,7 +6,6 @@ export type {
   FilterState,
   AnalyzeResponse,
   TaskResponse,
-  StreamMessage,
   LinkCollectionProgress,
   CVProfile,
   JobAdFetched,
@@ -17,5 +16,5 @@ export type {
 // Additional re-exports for client storage types
 export type { AnalysisStatus as ClientAnalysisStatus } from "./schemas/clientStorageSchemas";
 
-// Import AnalysisRecord from specific schema file
-export type { AnalysisRecord } from "./schemas/recordSchemas";
+// Import AnalysisRecord from system schema file
+export type { AnalysisRecord } from "./schemas/system";
