@@ -27,7 +27,7 @@ export const userOperations = {
 
     const apiKey = await getCurrentApiKey();
     for (const id of ids) {
-      await currentState.dbStorage.update(apiKey, id, { isNewThisRun: true });
+      await currentState.dbStorage.update(apiKey, id, { userInteractions: { isNewThisRun: true, interactionCount: 0 } });
     }
   },
 };

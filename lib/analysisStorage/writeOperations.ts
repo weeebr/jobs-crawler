@@ -41,51 +41,9 @@ export const writeOperations = {
     // Save to database
     const apiKey = await getCurrentApiKey();
 
-    const dbRecordData = {
-      // Job data
-      title: record.job.title,
-      company: record.job.company,
-      description: null, // Job parsing doesn't extract description, use null
-      stack: record.job.stack,
-      publishedAt: record.job.publishedAt || null,
-      location: record.job.location || null,
-      workload: record.job.workload || null,
-      duration: record.job.duration || null,
-      size: record.job.size || null,
-      companySize: record.job.companySize || null,
-      sourceUrl: record.job.sourceUrl || null,
-      sourceType: 'single-job',
-
-      // LLM analysis
-      matchScore: record.llmAnalysis.matchScore,
-      reasoning: JSON.stringify(record.llmAnalysis.reasoning), // Serialize array to JSON string
-
-      // User interactions
-      status: record.userInteractions.status || null,
-      isNewThisRun: record.userInteractions.isNewThisRun,
-
-      // Timestamps
-      createdAt: new Date(record.createdAt),
-      updatedAt: new Date(record.updatedAt),
-    };
-
-    // Add explicit title validation before database save
-    if (!dbRecordData.title || dbRecordData.title.trim() === '') {
-      console.error(`[writeOperations] ERROR - Title is null or empty before database save:`, {
-        title: dbRecordData.title,
-        recordTitle: record.job.title,
-        company: record.job.company,
-      });
-      throw new Error(`Cannot save record with null/empty title: ${dbRecordData.title}`);
-    }
-
-    // Additional safeguard: if title is still somehow empty, generate a fallback
-    if (!dbRecordData.title.trim()) {
-      dbRecordData.title = `Job at ${record.job.company || 'Unknown Company'}`;
-      console.warn(`[writeOperations] WARN - Generated fallback title: "${dbRecordData.title}"`);
-    }
-
-    const dbRecord = await currentState.dbStorage.save(apiKey, dbRecordData);
+    // Create a database record from the client record
+    // The storage interface expects the full record structure
+    const dbRecord = await currentState.dbStorage.save(apiKey, record);
     const clientRecord = dbRecordToClientRecord(dbRecord);
 
     console.info(`[db-storage] saved record ${clientRecord.id} to database`);
@@ -104,23 +62,11 @@ export const writeOperations = {
     }
 
     const apiKey = await getCurrentApiKey();
-    const dbUpdates = {
-      title: updates.job?.title,
-      company: updates.job?.company,
-      description: undefined, // Job type doesn't have description field
-      matchScore: updates.llmAnalysis?.matchScore,
-      reasoning: updates.llmAnalysis?.reasoning ? JSON.stringify(updates.llmAnalysis.reasoning) : undefined,
-      status: updates.userInteractions?.status,
-      isNewThisRun: updates.userInteractions?.isNewThisRun,
-      updatedAt: new Date(),
-    };
 
-    // Remove undefined values
-    const cleanUpdates = Object.fromEntries(
-      Object.entries(dbUpdates).filter(([_, value]) => value !== undefined)
-    );
+    // Convert partial updates to database format using existing utility
+    const dbUpdates = clientRecordToDbRecord(updates as AnalysisRecord);
 
-    const dbRecord = await currentState.dbStorage.update(apiKey, id, cleanUpdates);
+    const dbRecord = await currentState.dbStorage.update(apiKey, id, dbUpdates);
     if (dbRecord) {
       return dbRecordToClientRecord(dbRecord);
     }

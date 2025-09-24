@@ -1,6 +1,6 @@
 import { and, eq, desc, inArray, like } from 'drizzle-orm';
 import type { AnalysisRecordsTable, UsersTable } from './analysisStorageTypes';
-import type { DbAnalysisRecord } from './db/schema';
+import type { AnalysisRecord } from './db/schema';
 import { validateTimestampFields } from './analysisStorageUtils';
 
 // Helper function to create storage interface
@@ -12,7 +12,7 @@ export function createStorageInterface(
   getOrCreateUser: (apiKey: string) => Promise<{ id: number; createdAt: Date; apiKeyHash: string; lastActiveAt: Date; totalAnalyses: number | null; preferredModel: string | null; }>
 ) {
   return {
-    save: async (apiKey: string, record: Omit<DbAnalysisRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    save: async (apiKey: string, record: Omit<AnalysisRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
       const user = await getOrCreateUser(apiKey);
 
       // Validate timestamp fields to prevent getTime() errors
@@ -50,7 +50,7 @@ export function createStorageInterface(
       return records;
     },
 
-    update: async (apiKey: string, id: number, updates: Partial<Omit<DbAnalysisRecord, 'id' | 'userId' | 'createdAt'>>) => {
+    update: async (apiKey: string, id: number, updates: Partial<Omit<AnalysisRecord, 'id' | 'userId' | 'createdAt'>>) => {
       const user = await getOrCreateUser(apiKey);
 
       // Validate timestamp fields to prevent getTime() errors
