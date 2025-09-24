@@ -1,4 +1,5 @@
 import { isBrowser } from "./clientStorage/types";
+import { z } from "zod";
 
 /**
  * Centralized localStorage operations with error handling
@@ -52,8 +53,8 @@ export function safeLocalStorageRemove(key: string): boolean {
  * Centralized data loading with schema validation
  */
 export function loadDataWithValidation<T>(
-  key: string, 
-  schema: any, 
+  key: string,
+  schema: z.ZodType<T>,
   defaultValue: T
 ): T {
   const raw = safeLocalStorageGet(key, null);
@@ -72,9 +73,9 @@ export function loadDataWithValidation<T>(
  * Centralized data persistence with validation
  */
 export function saveDataWithValidation<T>(
-  key: string, 
-  data: T, 
-  schema: any
+  key: string,
+  data: T,
+  schema: z.ZodType<T>
 ): boolean {
   try {
     const validated = schema.parse(data);

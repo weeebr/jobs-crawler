@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
 
-  const record = analysisStorage.get(id, "server");
+  const record = await analysisStorage.getById(id);
   if (!record) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -75,7 +75,7 @@ export async function POST(request: Request, { params }: Params) {
       },
     },
     updatedAt: Date.now(),
-  }, "server");
+  });
 
   console.info(
     `[api/analysis/${params.id}/letter] generated letter (${language}) source=${result.source}`,

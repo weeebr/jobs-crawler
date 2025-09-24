@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 // Base job data schema - shared between full job data and summaries
+// Note: title and company are required but can be empty strings as fallbacks
 export const baseJobDataSchema = z.object({
-  title: z.string().min(1, "Job title required"),
-  company: z.string().min(1, "Company name required"),
+  title: z.string(),
+  company: z.string(),
   stack: z.array(z.string()).default([]),
   publishedAt: z.string().optional(),
   location: z.string().optional(),

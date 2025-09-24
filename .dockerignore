@@ -1,0 +1,32 @@
+node_modules
+.next
+.git
+.gitignore
+README.md
+.env*
+*.md
+.nyc_output
+coverage
+.vscode
+.idea
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.tgz
+*.tar.gz
+.nyc_output
+coverage
+.vitest
+__tests__
+scripts/post-verify.js
+scripts/setup-fly.js
+fly.toml
+Dockerfile
+.dockerignore
+# Keep config files needed for build
+# tsconfig.json
+# next.config.js
+test-*.js
+verify-*.js

@@ -1,14 +1,14 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { 
-  setupDefaultMocks, 
-  mockCvProfile, 
-  createMockJob, 
+import {
+  setupDefaultMocks,
+  mockCvProfile,
+  createMockJob,
   createMockAnalysis,
   fetchJobAdMock,
   parseJobAdMock,
   compareCvMock,
   rankMatchScoreMock,
-  saveAnalysisMock,
+  analysisStorageMock,
   collectJobLinksMock
 } from "./testUtils";
 
@@ -46,7 +46,7 @@ async function testTwoStageWorkflow(
         heuristics: comparison
       });
       
-      const record = saveAnalysisMock({
+      const record = analysisStorageMock.save({
         id: Math.floor(Math.random() * 1000),
         job,
         cv: cvProfile,
@@ -125,7 +125,7 @@ describe("2-Stage Workflow Integration", () => {
         source: "llm"
       });
 
-    saveAnalysisMock
+    analysisStorageMock.save
       .mockReturnValueOnce(createMockAnalysis(1, createMockJob("Frontend Developer", "TechCorp"), mockCvProfile))
       .mockReturnValueOnce(createMockAnalysis(2, createMockJob("React Developer", "StartupXYZ", ["React", "JavaScript"]), mockCvProfile));
 
@@ -143,7 +143,7 @@ describe("2-Stage Workflow Integration", () => {
     expect(parseJobAdMock).toHaveBeenCalledTimes(2); // 2 job pages
     expect(compareCvMock).toHaveBeenCalledTimes(2); // 2 jobs
     expect(rankMatchScoreMock).toHaveBeenCalledTimes(2); // 2 jobs
-    expect(saveAnalysisMock).toHaveBeenCalledTimes(2); // 2 jobs
+    expect(analysisStorageMock.save).toHaveBeenCalledTimes(2); // 2 jobs
 
     // Verify final result
     expect(result.records).toHaveLength(2);

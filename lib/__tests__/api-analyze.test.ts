@@ -34,15 +34,18 @@ vi.mock("@/lib/rankMatch", () => ({
   })
 }));
 
-vi.mock("@/lib/analysisStore", () => ({
-  saveAnalysis: vi.fn().mockReturnValue({
-    id: 123,
-    job: {},
-    cv: {},
-    analysis: {},
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  })
+vi.mock("@/lib/analysisStorageHandler", () => ({
+  analysisStorage: {
+    save: vi.fn().mockReturnValue({
+      id: 123,
+      job: {},
+      cv: {},
+      llmAnalysis: {},
+      userInteractions: {},
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    })
+  }
 }));
 
 vi.mock("@/lib/cvLoader", () => ({

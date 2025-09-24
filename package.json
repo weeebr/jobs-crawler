@@ -8,15 +8,24 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:fast": "eslint --cache --cache-location .eslintcache --max-warnings 1000 --quiet app/ lib/ scripts/ --ignore-pattern '**/__tests__/**'",
     "test": "vitest run",
-    "verify": "node scripts/post-verify.js",
+    "verify": "node scripts/post-verify.js --full",
     "verify:fast": "node scripts/post-verify.js",
-    "verify:full": "node scripts/post-verify.js --dev-server --with-tests",
-    "verify:test": "node scripts/post-verify.js --with-tests"
+    "verify:full": "node scripts/post-verify.js --full --dev-server --with-tests",
+    "verify:test": "node scripts/post-verify.js --with-tests",
+    "verify:kill": "pkill -f 'post-verify.js' || true",
+    "verify:force": "rm -f .verify-lock .verify-lock.tmp && node scripts/post-verify.js",
+    "db:push": "drizzle-kit push",
+    "db:sync:to-hosted": "npx tsx scripts/sync-db.js to-hosted",
+    "db:sync:from-hosted": "npx tsx scripts/sync-db.js from-hosted"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
+    "better-sqlite3": "^11.3.0",
     "cheerio": "^1.1.2",
+    "drizzle-orm": "^0.44.5",
+    "drizzle-zod": "^0.8.3",
     "fuse.js": "^7.1.0",
     "jsdom": "^27.0.0",
     "marked": "^16.3.0",
@@ -28,16 +37,21 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitest/coverage-v8": "^3.2.4",
     "autoprefixer": "^10.4.20",
+    "drizzle-kit": "^0.31.4",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.10",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { requireBackgroundTask } from "./contractValidation";
+import type { BackgroundTask } from "./schemas/taskSchemas";
 
 export interface ClearAllTasksOptions {
   preserveAnalyses?: boolean;
@@ -8,10 +9,10 @@ export interface ClearAllTasksOptions {
 
 export interface TaskOperations {
   validateApiKey: (onError?: (message: string) => void) => void;
-  createTask: (searchUrl: string) => Promise<any>;
+  createTask: (searchUrl: string) => Promise<{ task: BackgroundTask }>;
   startStream: (searchUrl: string, taskId: string, clearJobAdData?: boolean) => Promise<Response>;
   cancelTask: (taskId: string) => Promise<boolean>;
-  clearAllTasks: (tasks: any[], options?: ClearAllTasksOptions) => Promise<void>;
+  clearAllTasks: (tasks: BackgroundTask[], options?: ClearAllTasksOptions) => Promise<void>;
 }
 
 export function createTaskOperations(): TaskOperations {
@@ -67,7 +68,7 @@ export function createTaskOperations(): TaskOperations {
     }
   };
 
-  const clearAllTasks = async (tasks: any[], options?: ClearAllTasksOptions) => {
+  const clearAllTasks = async (tasks: BackgroundTask[], options?: ClearAllTasksOptions) => {
     for (const task of tasks) {
       if (task.status === 'running') {
         try {

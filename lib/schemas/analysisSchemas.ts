@@ -32,7 +32,7 @@ export const llmAnalysisSchema = z.object({
     .default({}),
   // Analysis metadata
   analyzedAt: z.number().int().min(0),
-  analysisVersion: z.string().default("1.0"),
+  analysisVersion: z.string().default("1.0")
 });
 
 // User Interactions - User-specific data and preferences
@@ -42,6 +42,8 @@ export const userInteractionsSchema = z.object({
   // User interaction metadata
   lastViewedAt: z.number().int().min(0).optional(),
   interactionCount: z.number().int().min(0).default(0),
+  // Track if this job was fetched in the current session
+  isNewThisRun: z.boolean().default(false),
 });
 
 export type MotivationLetter = z.infer<typeof motivationLetterSchema>;

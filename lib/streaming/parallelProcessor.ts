@@ -1,4 +1,5 @@
 import { analyzeSingleJob } from "@/lib/streaming/jobAnalysis";
+import { shouldSkipJobUrl } from "@/lib/analysisStorageUtils";
 import { addTaskResult, addTaskError, getTaskAbortController } from "@/lib/backgroundTasks";
 import { extractErrorMessage } from "@/lib/apiUtils";
 import { getExistingJobUrls } from "@/lib/clientStorage/core";
@@ -10,7 +11,7 @@ export async function processJobLinksInParallel(
   cvProfile: CVProfile,
   options: { clearJobAdData?: boolean },
   taskId: string | undefined,
-  sendMessage: (type: string, data: any) => void,
+  sendMessage: (type: string, data: unknown) => void,
   isClosed: () => boolean
 ): Promise<{ records: AnalysisRecord[]; errors: { url: string; message: string }[] }> {
   const records: AnalysisRecord[] = [];
@@ -39,6 +40,19 @@ export async function processJobLinksInParallel(
     const batchPromises = batch.map(async (link, batchIndex) => {
       const globalIndex = i + batchIndex;
       
+      // Check if this job URL should be skipped based on URL pattern
+      const skipCheck = shouldSkipJobUrl(link);
+      if (skipCheck.skip) {
+        console.info(`[parallelProcessor] skipping job URL: ${link} - ${skipCheck.reason}`);
+        sendMessage('progress', {
+          message: `Skipping job ${globalIndex + 1}/${jobLinks.length} - ${skipCheck.reason}`,
+          current: globalIndex + 1,
+          total: jobLinks.length,
+          url: link
+        });
+        return { success: true, record: null, index: globalIndex, skipped: true };
+      }
+
       // Check if this job URL already exists
       if (existingUrls.has(link)) {
         console.info(`[parallelProcessor] skipping duplicate job URL: ${link}`);
@@ -60,12 +74,12 @@ export async function processJobLinksInParallel(
         });
 
         const record = await analyzeSingleJob({ jobUrl: link }, cvProfile, options, taskAbortController || undefined);
-        
+
         // Update background task with result
         if (taskId) {
           addTaskResult(taskId, record);
         }
-        
+
         sendMessage('result', {
           record,
           index: globalIndex,
@@ -75,13 +89,26 @@ export async function processJobLinksInParallel(
         return { success: true, record, index: globalIndex };
       } catch (error) {
         const message = extractErrorMessage(error);
+
+        // Handle skip errors differently - don't treat as failures
+        if (error instanceof Error && error.message.includes('Job skipped due to empty title')) {
+          console.info(`[api/analyze/stream] Skipping job due to empty title: ${link}`);
+          sendMessage('progress', {
+            message: `Skipped job ${globalIndex + 1}/${jobLinks.length} - empty title`,
+            current: globalIndex + 1,
+            total: jobLinks.length,
+            url: link
+          });
+          return { success: true, record: null, index: globalIndex, skipped: true };
+        }
+
         console.warn(`[api/analyze/stream] failed for ${link}`, error);
-        
+
         // Update background task with error
         if (taskId) {
           addTaskError(taskId, { url: link, message });
         }
-        
+
         sendMessage('error', {
           url: link,
           message,

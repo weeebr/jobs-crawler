@@ -91,8 +91,85 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy on Fly.io
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Deploy your application to Fly.io for production with persistent data storage and database support.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Prerequisites
+
+1. **Install Fly.io CLI**:
+   ```bash
+   curl -L https://fly.io/install.sh | sh
+   ```
+
+2. **Authenticate with Fly.io**:
+   ```bash
+   fly auth login
+   ```
+
+### Quick Setup
+
+Run the automated setup script:
+
+```bash
+npm run setup:all
+```
+
+This will:
+1. ✅ Verify local code quality
+2. ✅ Build the application
+3. ✅ Set up Fly.io application
+4. ✅ Create PostgreSQL database
+5. ✅ Prepare deployment configuration
+
+### Deploy to Production
+
+```bash
+npm run deploy:fly
+```
+
+### Database Management
+
+```bash
+npm run db:connect    # Connect to PostgreSQL database
+npm run db:migrate    # Run database migrations (TODO: implement)
+```
+
+### Manual Setup
+
+If you prefer manual setup:
+
+```bash
+# 1. Create Fly.io app
+fly launch
+
+# 2. Set up database
+fly postgres create --name jobs-crawler-db
+
+# 3. Deploy
+fly deploy
+```
+
+### Available Commands
+
+- `npm run setup:all` - Complete automated setup
+- `npm run setup:deploy` - Setup and deploy in one command
+- `npm run db:setup` - Create PostgreSQL database
+- `npm run db:connect` - Connect to database
+- `npm run deploy:fly` - Deploy to production
+
+### Environment Variables
+
+The following environment variables are configured in `fly.toml`:
+
+- `NODE_ENV=production`
+- `PORT=3000`
+- `DATABASE_URL` (auto-generated after database setup)
+
+### Monitoring & Logs
+
+```bash
+fly logs          # View application logs
+fly status        # Check app status
+fly dashboard     # Open web dashboard
+```

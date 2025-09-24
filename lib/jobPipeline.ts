@@ -4,17 +4,7 @@ import { compareCv } from "./compareCv";
 import { rankMatchScore } from "./rankMatch";
 import { analysisStorage } from "./analysisStorageHandler";
 import { extractJobLinks } from "./extractJobLinks";
-import {
-  jobAdFetchedSchema,
-  llmAnalysisSchema,
-  userInteractionsSchema,
-  type CVProfile,
-  type JobAdParsed,
-  type JobAdFetched,
-  type LLMAnalysis,
-  type UserInteractions,
-} from "./schemas";
-import type { AnalysisRecord } from "./types";
+import { jobAdFetchedSchema, llmAnalysisSchema, userInteractionsSchema, type CVProfile, type JobAdParsed, type JobAdFetched, type LLMAnalysis, type UserInteractions, type AnalysisRecord } from "./schemas";
 
 export const JOB_PIPELINE_DEFAULTS = Object.freeze({
   timeoutMs: 8_000,
@@ -23,17 +13,9 @@ export const JOB_PIPELINE_DEFAULTS = Object.freeze({
 });
 
 export type LinkCollectionProgress = { message: string; total: number; completed: number };
-export type CollectJobLinksOptions = {
-  fetchOptions?: Partial<FetchJobAdOptions>;
-  maxPages?: number;
-  onProgress?: (progress: LinkCollectionProgress) => void;
-};
+export type CollectJobLinksOptions = { fetchOptions?: Partial<FetchJobAdOptions>; maxPages?: number; onProgress?: (progress: LinkCollectionProgress) => void };
 export type JobHtmlSource = { jobUrl?: string; rawHtml?: string };
-export type AnalyzeJobOptions = {
-  fetchOptions?: Partial<FetchJobAdOptions>;
-  clearJobAdData?: boolean;
-  abortSignal?: AbortSignal;
-};
+export type AnalyzeJobOptions = { fetchOptions?: Partial<FetchJobAdOptions>; clearJobAdData?: boolean; abortSignal?: AbortSignal };
 
 export async function collectJobLinks(
   searchUrl: string,
@@ -91,7 +73,19 @@ export async function analyzeJob(
   throwIfAborted(options.abortSignal);
   const { html, sourceUrl } = await resolveJobHtml(source, options);
   throwIfAborted(options.abortSignal);
-  const job = await parseJobAd(html, { sourceUrl });
+
+  // Parse job ad with skip handling
+  let job;
+  try {
+    job = await parseJobAd(html, { sourceUrl });
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('SKIP_JOB:')) {
+      console.warn(`[jobPipeline] Skipping job due to empty title: ${sourceUrl}`);
+      throw new Error(`Job skipped due to empty title: ${sourceUrl}`);
+    }
+    throw error; // Re-throw other errors
+  }
+
   const normalizedJob = normalizeFetchedJob(job, sourceUrl);
   throwIfAborted(options.abortSignal);
   const comparison = compareCv(normalizedJob, cvProfile);
@@ -110,29 +104,39 @@ export async function analyzeJob(
     analysisVersion: "1.0",
   } satisfies LLMAnalysis;
 
-  const userInteractionsInput = {
-    interactionCount: 0,
-  } satisfies UserInteractions;
+  const userInteractionsInput = { interactionCount: 0 } satisfies UserInteractions;
 
   const llmAnalysis = llmAnalysisSchema.parse(llmAnalysisInput);
   const userInteractions = userInteractionsSchema.parse(userInteractionsInput);
 
-  const record = analysisStorage.save({
+  const recordToSave = {
     id: Date.now(),
     job: normalizedJob,
     cv: cvProfile,
     llmAnalysis,
     userInteractions,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  }, "server");
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as const;
+
+  // Additional validation to ensure title is not lost
+  if (!recordToSave.job.title || recordToSave.job.title.trim() === '') {
+    console.error(`[jobPipeline] ERROR - Title is null or empty before save:`, {
+      title: recordToSave.job.title,
+      company: recordToSave.job.company,
+      sourceUrl: recordToSave.job.sourceUrl,
+    });
+    throw new Error(`Cannot save record with null/empty title: ${recordToSave.job.title}`);
+  }
+
+  const record = await analysisStorage.save(recordToSave);
 
   console.info(`[jobPipeline] analyzed job id=${record.id} score=${llmAnalysis.matchScore} source=${ranking.source}`);
 
   return record;
 }
 
-function buildFetchOptions(overrides: Partial<FetchJobAdOptions> | undefined): FetchJobAdOptions {
+function buildFetchOptions(overrides?: Partial<FetchJobAdOptions>): FetchJobAdOptions {
   return {
     timeoutMs: overrides?.timeoutMs ?? JOB_PIPELINE_DEFAULTS.timeoutMs,
     retryCount: overrides?.retryCount ?? JOB_PIPELINE_DEFAULTS.retryCount,
@@ -140,33 +144,18 @@ function buildFetchOptions(overrides: Partial<FetchJobAdOptions> | undefined): F
   } satisfies FetchJobAdOptions;
 }
 
-async function resolveJobHtml(
-  source: JobHtmlSource,
-  options: AnalyzeJobOptions,
-): Promise<{ html: string; sourceUrl?: string }> {
+async function resolveJobHtml(source: JobHtmlSource, options: AnalyzeJobOptions): Promise<{ html: string; sourceUrl?: string }> {
   if (source.jobUrl) {
-    const fetchOptions = buildFetchOptions({
-      ...(options.fetchOptions ?? {}),
-      clearJobAdData: options.clearJobAdData,
-    });
-
+    const fetchOptions = buildFetchOptions({ ...(options.fetchOptions ?? {}), clearJobAdData: options.clearJobAdData });
     const html = await fetchJobAd(source.jobUrl, fetchOptions);
     return { html, sourceUrl: source.jobUrl };
   }
-
-  if (source.rawHtml) {
-    return { html: source.rawHtml };
-  }
-
+  if (source.rawHtml) return { html: source.rawHtml };
   throw new Error("No job content provided");
 }
 
 function normalizeFetchedJob(job: JobAdParsed, sourceUrl?: string): JobAdFetched {
-  return jobAdFetchedSchema.parse({
-    ...job,
-    fetchedAt: Date.now(),
-    sourceDomain: sourceUrl ? new URL(sourceUrl).hostname : undefined,
-  });
+  return jobAdFetchedSchema.parse({ ...job, fetchedAt: Date.now(), sourceDomain: sourceUrl ? new URL(sourceUrl).hostname : undefined });
 }
 
 function buildPageUrl(baseUrl: string, pageNumber: number): string {
@@ -182,7 +171,5 @@ function parseNonNegativeInt(value: string | null): number | null {
 }
 
 function throwIfAborted(signal: AbortSignal | undefined) {
-  if (signal?.aborted) {
-    throw new Error("Job analysis aborted");
-  }
+  if (signal?.aborted) throw new Error("Job analysis aborted");
 }

@@ -16,27 +16,33 @@ const taskQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  
-  // Validate query parameters
-  const queryResult = taskQuerySchema.safeParse({
-    active: searchParams.get('active'),
-    limit: searchParams.get('limit'),
-  });
-  
-  if (!queryResult.success) {
-    return NextResponse.json(
-      { error: 'Invalid query parameters', details: queryResult.error.flatten() },
-      { status: 400 }
-    );
+
+  // Get query parameters safely - handle null values
+  const activeParam = searchParams.get('active');
+  const limitParam = searchParams.get('limit');
+
+  // Only validate if parameters are actually provided
+  if (activeParam !== null || limitParam !== null) {
+    const queryResult = taskQuerySchema.safeParse({
+      active: activeParam,
+      limit: limitParam,
+    });
+
+    if (!queryResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: queryResult.error.flatten() },
+        { status: 400 }
+      );
+    }
   }
-  
-  const active = queryResult.data.active === 'true';
-  const limit = parseInt(queryResult.data.limit || '50', 10);
+
+  const active = activeParam === 'true';
+  const limit = parseInt(limitParam || '50', 10);
 
   try {
     const tasks = active ? listActiveTasks() : listAllTasks(limit);
     const response: TaskResponse = { tasks };
-    
+
     // Validate response before sending
     const validatedResponse = taskResponseSchema.parse(response);
     return NextResponse.json(validatedResponse);

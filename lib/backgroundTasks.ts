@@ -150,3 +150,23 @@ export function cleanupOldTasks(maxAge = 24 * 60 * 60 * 1000): number {
 
   return cleaned;
 }
+
+export function cancelAllActiveTasks(): number {
+  const activeTasks = Array.from(tasks.values()).filter(task => task.status === 'running');
+  let cancelled = 0;
+
+  for (const task of activeTasks) {
+    if (cancelTask(task.id)) {
+      cancelled++;
+    }
+  }
+
+  console.info(`[backgroundTasks] cancelled ${cancelled} active tasks on page unload`);
+  return cancelled;
+}
+
+export function getAllActiveTaskIds(): string[] {
+  return Array.from(tasks.values())
+    .filter(task => task.status === 'running')
+    .map(task => task.id);
+}

@@ -6,6 +6,8 @@ import { getReadableContent } from "./jobAd/readability";
 import {
   fallbackCompany,
   fallbackTitle,
+  generateFallbackCompany,
+  generateFallbackTitle,
   guessCompanyFromUrl,
   selectCompany,
   selectCompanyUrl,
@@ -41,18 +43,29 @@ export async function parseJobAd(
   const $ = load(html);
   const readable = getReadableContent(html, options.sourceUrl);
 
-  const title = selectTitle($) ?? fallbackTitle(readable);
+  // Simple title extraction - skip if empty
+  const rawTitle = selectTitle($) ?? '';
+  const title = rawTitle.trim();
+
   if (!title) {
-    throw new Error("Cannot extract job title from malformed job ad");
+    const fullJobData = {
+      sourceUrl: options.sourceUrl,
+      htmlLength: html.length,
+      hasTitleTag: $('title').length > 0,
+      titleTagContent: $('title').text().trim(),
+      hasH1: $('h1').length > 0,
+      h1Content: $('h1').text().trim(),
+      hasMain: $('main').length > 0,
+      mainContent: $('main').text().trim().substring(0, 200) + '...',
+    };
+
+    console.error('[parseJobAd] SKIPPING JOB - Empty title detected:', fullJobData);
+    console.error('[parseJobAd] JOB URL:', options.sourceUrl);
+
+    throw new Error(`SKIP_JOB: Empty title for ${options.sourceUrl}`);
   }
-  
-  const company =
-    selectCompany($) ??
-    guessCompanyFromUrl(options.sourceUrl) ??
-    fallbackCompany();
-  if (!company) {
-    throw new Error("Cannot extract company name from malformed job ad");
-  }
+
+  const company = selectCompany($) || guessCompanyFromUrl(options.sourceUrl) || fallbackCompany() || generateFallbackCompany(options.sourceUrl);
   const companyUrl = selectCompanyUrl($);
 
   const combinedText = [
@@ -92,7 +105,7 @@ export async function parseJobAd(
   // Use shared filterEmptyValue utility
 
   const parsed: JobAdParsed = {
-    title: title.trim(),
+    title: title,
     company: company.trim(),
     companyUrl,
     stack,
@@ -115,8 +128,15 @@ export async function parseJobAd(
   };
 
   console.info(
-    `[parseJobAd] title="${parsed.title}" company="${parsed.company}" stack=${parsed.stack.length} quals=${parsed.qualifications.length} roles=${parsed.roles.length} benefits=${parsed.benefits.length} motto="${motto || 'none'}"`,
+    `[parseJobAd] SUCCESS: title="${parsed.title}" company="${parsed.company}" stack=${parsed.stack.length} quals=${parsed.qualifications.length} roles=${parsed.roles.length} benefits=${parsed.benefits.length} motto="${motto || 'none'}" url=${options.sourceUrl}`,
   );
 
-  return jobAdFetchedSchema.parse(parsed);
+  // Validate but don't throw on missing data - return partial results
+  try {
+    return jobAdFetchedSchema.parse(parsed);
+  } catch (error) {
+    console.warn('[parseJobAd] Schema validation failed, returning partial data:', error);
+    // Return the parsed data even if validation fails, but log the issue
+    return parsed as JobAdParsed;
+  }
 }

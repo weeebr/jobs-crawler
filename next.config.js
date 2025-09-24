@@ -2,9 +2,10 @@
 const nextConfig = {
   // Enable HMR in development
   reactStrictMode: true,
-  
+
   // Optimize for development
   swcMinify: true,
+
   
   // Development-specific optimizations
   ...(process.env.NODE_ENV === 'development' && {

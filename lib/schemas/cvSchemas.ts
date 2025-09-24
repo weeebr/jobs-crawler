@@ -1,18 +1,18 @@
 import { z } from "zod";
 
-const roleSchema = z.object({
+export const roleSchema = z.object({
   title: z.string().min(1, "Role title required"),
   stack: z.array(z.string()).default([]),
   years: z.number().min(0).optional(),
 });
 
-const projectSchema = z.object({
+export const projectSchema = z.object({
   name: z.string().min(1, "Project name required"),
   impact: z.string().optional(),
   stack: z.array(z.string()).default([]),
 });
 
-const educationSchema = z.object({
+export const educationSchema = z.object({
   degree: z.string().min(1, "Degree required"),
   institution: z.string().optional(),
 });

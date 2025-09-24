@@ -15,5 +15,10 @@ export default defineConfig({
     environment: "node",
     globals: true,
     include: ["lib/**/*.test.ts"],
+    // Limit concurrency to prevent multiple vitest instances
+    maxWorkers: 2,
+    minWorkers: 1,
+    // Disable watch mode in CI to prevent hanging processes
+    watch: false,
   },
 });

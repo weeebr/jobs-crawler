@@ -1,15 +1,10 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
-
-import type { LetterLanguage } from "@/lib/generateMotivationLetter";
+import { useCallback, useEffect, useRef } from "react";
+import type { LetterLanguage } from "@/lib/letterHelpers";
 import type { AnalysisRecord } from "@/lib/types";
+import type { Dispatch, SetStateAction } from "react";
+import { generateLetter, createLetterView } from "./letter";
+import { copyToClipboard } from "./letter/copyService";
+import { useLetterState } from "./letter/useLetterState";
 
 export type LetterSource = "llm" | "template" | "cache";
 
@@ -42,42 +37,24 @@ export function useLetterManager({
   record,
   setRecord,
 }: UseLetterManagerArgs): UseLetterManagerResult {
-  const [letters, setLetters] = useState<
-    Partial<Record<LetterLanguage, LetterView>>
-  >({});
-  const [activeLanguage, setActiveLanguage] = useState<LetterLanguage | null>(
-    null,
-  );
-  const [loadingLanguage, setLoadingLanguage] = useState<LetterLanguage | null>(
-    null,
-  );
-  const [letterError, setLetterError] = useState<string | null>(null);
-  const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (!record) return;
-    const storedLetters = record.llmAnalysis.letters ?? {};
-    const initial: Partial<Record<LetterLanguage, LetterView>> = {};
-    (Object.entries(storedLetters) as [
-      LetterLanguage,
-      { content: string; generatedAt: number },
-    ][]).forEach(([language, value]) => {
-      initial[language] = {
-        original: value.content,
-        draft: value.content,
-        generatedAt: value.generatedAt,
-        source: "cache",
-      } satisfies LetterView;
-    });
-    setLetters(initial);
-    const available = Object.keys(initial) as LetterLanguage[];
-    if (available.length > 0) {
-      setActiveLanguage((current) => current ?? available[0]);
-    }
-    setLetterError(null);
-  }, [record]);
+  const {
+    letters,
+    activeLanguage,
+    setActiveLanguage,
+    activeLetter,
+    loadingLanguage,
+    setLoading,
+    letterError,
+    setError,
+    copyNotice,
+    setCopySuccess,
+    updateLetter,
+    updateDraft,
+  } = useLetterState(record);
 
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) {
@@ -87,63 +64,26 @@ export function useLetterManager({
     };
   }, []);
 
-  useEffect(() => {
-    setCopyNotice(null);
-  }, [activeLanguage]);
-
   const handleGenerate = useCallback(
     async (language: LetterLanguage) => {
       if (!record) return;
 
       setActiveLanguage(language);
-      setLetterError(null);
-      setCopyNotice(null);
+      setError(null);
+      setCopySuccess(null);
 
       if (letters[language]) {
         return;
       }
 
-      setLoadingLanguage(language);
+      setLoading(language);
 
-      try {
-        const response = await fetch(`/api/analysis/${record.id}/letter`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ language }),
-        });
+      const letter = await generateLetter(record.id, language, setError);
 
-        if (!response.ok) {
-          const payload = await response.json().catch(() => ({}));
-          const message =
-            typeof payload.error === "string"
-              ? payload.error
-              : `Letter generation failed (${response.status})`;
-          setLetterError(message);
-          return;
-        }
+      if (letter) {
+        updateLetter(language, letter);
 
-        const data = (await response.json()) as {
-          language: string;
-          content: string;
-          generatedAt: number;
-          source?: string;
-        };
-
-        const source: LetterSource =
-          data.source === "template" || data.source === "cache"
-            ? data.source
-            : "llm";
-
-        setLetters((current) => ({
-          ...current,
-          [language]: {
-            original: data.content,
-            draft: data.content,
-            generatedAt: data.generatedAt,
-            source,
-          },
-        }));
-
+        // Update the record with the new letter
         setRecord((current: AnalysisRecord | null) => {
           if (!current) return current;
           return {
@@ -153,77 +93,46 @@ export function useLetterManager({
               letters: {
                 ...current.llmAnalysis.letters,
                 [language]: {
-                  content: data.content,
-                  generatedAt: data.generatedAt,
+                  content: letter.original,
+                  generatedAt: letter.generatedAt,
                 },
               },
             },
           } satisfies AnalysisRecord;
         });
-      } catch (error) {
-        console.warn("[report] letter generation failed", error);
-        setLetterError(
-          error instanceof Error
-            ? error.message
-            : "Unexpected letter generation error",
-        );
-      } finally {
-        setLoadingLanguage(null);
       }
+
+      setLoading(null);
     },
-    [letters, record, setRecord],
+    [record, letters, setRecord, setActiveLanguage, setError, setCopySuccess, setLoading, updateLetter],
   );
 
   const handleDraftChange = useCallback(
     (language: LetterLanguage, draft: string) => {
-      setLetters((current) => {
-        const existing = current[language];
-        if (!existing) {
-          return current;
-        }
-        return {
-          ...current,
-          [language]: {
-            ...existing,
-            draft,
-          },
-        };
-      });
+      updateDraft(language, draft);
     },
-  []);
+    [updateDraft],
+  );
 
   const handleCopy = useCallback(async () => {
-    if (!activeLanguage) return;
-    const letter = letters[activeLanguage];
-    if (!letter) return;
+    if (!activeLanguage || !activeLetter) return;
 
-    try {
-      if (typeof navigator === "undefined" || !navigator.clipboard) {
-        throw new Error("Clipboard API unavailable");
-      }
-      await navigator.clipboard.writeText(letter.draft);
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-      setLetterError(null);
-      setCopyNotice("Copied to clipboard");
-      copyTimeoutRef.current = setTimeout(() => {
-        setCopyNotice(null);
-        copyTimeoutRef.current = null;
-      }, 2000);
-    } catch (error) {
-      console.warn("[report] copy failed", error);
-      setLetterError(
-        error instanceof Error
-          ? error.message
-          : "Copy failed. Select manually.",
-      );
-    }
-  }, [activeLanguage, letters]);
-
-  const activeLetter = useMemo(() => {
-    return activeLanguage ? letters[activeLanguage] ?? null : null;
-  }, [activeLanguage, letters]);
+    await copyToClipboard(
+      activeLetter.draft,
+      () => {
+        if (copyTimeoutRef.current) {
+          clearTimeout(copyTimeoutRef.current);
+        }
+        setError(null);
+        setCopySuccess("Copied to clipboard");
+        copyTimeoutRef.current = setTimeout(() => {
+          setCopySuccess(null);
+          copyTimeoutRef.current = null;
+        }, 2000);
+      },
+      setError
+    );
+  }, [activeLanguage, activeLetter, setError, setCopySuccess]);
 
   return {
     letters,

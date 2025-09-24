@@ -6,7 +6,9 @@
 /* Development optimization: reduce CSS chunking */
 @media (prefers-reduced-motion: no-preference) {
   /* Only load animations if user prefers motion */
-  * {
+  .animate-fade-in-up,
+  .animate-slide-in-right,
+  .animate-pulse {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

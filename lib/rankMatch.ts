@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import type { CVProfile, JobAdParsed, ComparisonResult, MatchRanking } from "./schemas";
+import { roleSchema, projectSchema } from "./schemas/cvSchemas";
+
+type CVRole = z.infer<typeof roleSchema>;
+type CVProject = z.infer<typeof projectSchema>;
 import { matchRankingSchema } from "./schemas";
 import { roundMatchScore } from "./matchScore";
 
@@ -145,11 +149,11 @@ function formatJob(job: JobAdParsed): string {
 }
 
 function formatCv(cv: CVProfile): string {
-  const roleSummaries = cv.roles.slice(0, 4).map((role: any) => {
+  const roleSummaries = cv.roles.slice(0, 4).map((role: CVRole) => {
     const stack = role.stack.slice(0, 8).join(", ") || "(no stack listed)";
     return `${role.title} — stack: ${stack}${typeof role.years === "number" ? ` (${role.years}y)` : ""}`;
   });
-  const projects = cv.projects.slice(0, 3).map((project: any) => {
+  const projects = cv.projects.slice(0, 3).map((project: CVProject) => {
     const stack = project.stack.slice(0, 6).join(", ") || "(no stack listed)";
     return `${project.name}: ${stack}${project.impact ? ` — ${project.impact}` : ""}`;
   });

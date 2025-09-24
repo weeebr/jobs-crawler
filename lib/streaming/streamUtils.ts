@@ -1,9 +1,9 @@
 export interface StreamMessage {
   type: 'progress' | 'result' | 'error' | 'complete';
-  data: any;
+  data: unknown;
 }
 
-export function createSSEMessage(type: string, data: any): string {
+export function createSSEMessage(type: string, data: unknown): string {
   return `data: ${JSON.stringify({ type, data })}\n\n`;
 }
 

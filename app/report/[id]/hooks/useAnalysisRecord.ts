@@ -1,14 +1,25 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 
-import {
-  loadAnalysisRecord,
-  loadRecentSummaries,
-  persistRecentSummaries,
-  toSummary,
-  type RecentAnalysisSummary,
-} from "@/lib/clientStorage";
 import type { AnalysisRecord } from "@/lib/types";
-import { analysisStorage } from "@/lib/analysisStorageHandler";
+
+// Helper function to get API key for requests
+async function getApiKey(): Promise<string> {
+  return process.env.NEXT_PUBLIC_ANALYSIS_API_KEY || "default-user";
+}
+
+// Helper function to make authenticated requests
+async function apiRequest(url: string, options: RequestInit = {}): Promise<Response> {
+  const apiKey = await getApiKey();
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      ...options.headers,
+    },
+  });
+}
 
 type Status = "loading" | "ready" | "missing" | "error";
 
@@ -38,60 +49,45 @@ export function useAnalysisRecord(id: string): UseAnalysisRecordResult {
   useEffect(() => {
     let ignore = false;
 
-    function syncRecent(nextRecord: AnalysisRecord) {
-      const summary = toSummary(nextRecord);
-      const current = loadRecentSummaries();
-      const next: RecentAnalysisSummary[] = [
-        summary,
-        ...current.filter((item) => item.id !== nextRecord.id),
-      ];
-      persistRecentSummaries(next.slice(0, 5));
-    }
-
-    function hydrateFromLocal() {
-      const localRecord = loadAnalysisRecord(Number(id));
-      if (localRecord && !ignore) {
-        setRecord(localRecord);
-        setStatus("ready");
-        syncRecent(localRecord);
-        return true;
-      }
-      return false;
-    }
-
-    if (hydrateFromLocal()) {
-      return () => {
-        ignore = true;
-      };
-    }
-
-    async function fetchRemote() {
+    async function fetchFromApi() {
       try {
-        const response = await fetch(`/api/analysis/${id}`, {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          setStatus(response.status === 404 ? "missing" : "error");
+        const analysisId = Number(id);
+        if (!Number.isFinite(analysisId)) {
+          setStatus("missing");
           return;
         }
 
-        const remoteRecord = (await response.json()) as AnalysisRecord;
-        analysisStorage.save(remoteRecord, "client");
-        syncRecent(remoteRecord);
+        const response = await apiRequest(`/api/analysis/${analysisId}`);
+
+        if (response.status === 404) {
+          setStatus("missing");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch analysis: ${response.statusText}`);
+        }
+
+        const dbRecord = await response.json();
+
+        if (!dbRecord) {
+          setStatus("missing");
+          return;
+        }
+
         if (ignore) return;
-        setRecord(remoteRecord);
+        setRecord(dbRecord);
         setStatus("ready");
+        console.info(`[report] loaded analysis ${id} from API`);
       } catch (error) {
-        console.warn("[report] failed to fetch analysis", error);
+        console.warn("[report] failed to fetch analysis from API", error);
         if (!ignore) {
           setStatus("error");
         }
       }
     }
 
-    fetchRemote();
+    fetchFromApi();
 
     return () => {
       ignore = true;

@@ -27,5 +27,17 @@ export const DEFAULT_FILTER_STATE: FilterState = {
 
 // Utility function
 export function isBrowser() {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return (typeof window !== "undefined" && typeof window.localStorage !== "undefined") ||
+         (typeof global !== "undefined" && typeof global.localStorage !== "undefined");
+}
+
+// Get localStorage with fallback for test environments
+export function getLocalStorage() {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  if (typeof global !== "undefined" && global.localStorage) {
+    return global.localStorage;
+  }
+  return null;
 }

@@ -1,6 +1,5 @@
 // Re-export all types from schemas
-export type { 
-  AnalysisRecord,
+export type {
   BackgroundTask,
   RecentAnalysisSummary,
   AnalysisStatus,
@@ -14,3 +13,9 @@ export type {
   LLMAnalysis,
   UserInteractions
 } from "./schemas";
+
+// Additional re-exports for client storage types
+export type { AnalysisStatus as ClientAnalysisStatus } from "./schemas/clientStorageSchemas";
+
+// Import AnalysisRecord from specific schema file
+export type { AnalysisRecord } from "./schemas/recordSchemas";

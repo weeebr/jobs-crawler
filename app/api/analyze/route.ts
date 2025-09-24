@@ -11,20 +11,28 @@ import {
 } from "@/lib/schemas";
 import type { AnalysisRecord } from "@/lib/types";
 
+type AnalyzeRequestData = {
+  jobUrl?: string;
+  searchUrl?: string;
+  rawHtml?: string;
+  cv?: CVProfile;
+  clearJobAdData?: boolean;
+};
+
 const analyzeRequestSchema = z.object({
   jobUrl: z.string().url().optional(),
   searchUrl: z.string().url().optional(),
   rawHtml: z.string().min(1, "rawHtml must not be empty").optional(),
   cv: cvProfileSchema.optional(),
   clearJobAdData: z.boolean().optional(),
-}).refine((data: z.infer<typeof analyzeRequestSchema>) => {
+}).refine((data: AnalyzeRequestData) => {
   const hasSingle = Boolean(data.jobUrl || data.rawHtml);
   const hasSearch = Boolean(data.searchUrl);
   return hasSingle || hasSearch;
 }, {
   message: "Provide jobUrl, rawHtml, or searchUrl",
   path: ["jobUrl"],
-}).refine((data: z.infer<typeof analyzeRequestSchema>) => {
+}).refine((data: AnalyzeRequestData) => {
   const hasSingle = Boolean(data.jobUrl || data.rawHtml);
   const hasSearch = Boolean(data.searchUrl);
   return !(hasSingle && hasSearch);
@@ -112,7 +120,8 @@ async function analyzeSearchUrl(
   );
 
   if (jobLinks.length === 0) {
-    throw new Error("No job detail links found on search page");
+    console.info('[api/analyze] No job links found on search page - returning empty results');
+    return { records: [] };
   }
 
   const records: AnalysisRecord[] = [];

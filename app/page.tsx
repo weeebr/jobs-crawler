@@ -19,6 +19,7 @@ export default function HomePage() {
   const [jobUrl, setJobUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+
   // Load default job search URL from config
   useEffect(() => {
     const config = getConfig();
@@ -26,16 +27,18 @@ export default function HomePage() {
   }, []);
 
   const {
-    recent,
-    statuses,
+    analyses,
+    isLoading,
     activeTasks,
     isStreaming,
-    handleRefetch,
-    handleRefresh,
-    handleStatusToggle,
-    handleDelete,
+    loadAnalyses,
+    updateAnalysisStatus,
+    deleteAnalysis,
     errorMessage,
     clearError,
+    getStats,
+    startTask,
+    clearAllTasks,
   } = useAnalysisData();
 
 
@@ -65,9 +68,9 @@ export default function HomePage() {
     }
 
     try {
-      // Use the same refresh logic as the refresh button, but preserve cached data
-      await handleRefresh(jobUrl.trim());
-      console.info(`[home] started refresh with job URL: ${jobUrl.trim()}`);
+      // Start the task and let it run in background
+      await startTask(jobUrl.trim());
+      console.info(`[home] started analysis with job URL: ${jobUrl.trim()}`);
     } catch (submitError) {
       const message =
         submitError instanceof Error
@@ -80,7 +83,7 @@ export default function HomePage() {
 
   async function handleRefetchWithError() {
     setError(null);
-    
+
     // Validate API key immediately
     try {
       await checkApiKeyAndThrow();
@@ -90,7 +93,10 @@ export default function HomePage() {
     }
 
     try {
-      await handleRefetch(jobUrl);
+      // Clear existing data and reload from database
+      await clearAllTasks();
+      await loadAnalyses();
+      console.info('[home] refetched data from database');
     } catch (refetchError) {
       const message =
         refetchError instanceof Error
@@ -100,8 +106,10 @@ export default function HomePage() {
     }
   }
 
-  // Debug logging
-  console.log('[page] render state:', { error, errorMessage, hasError: !!(error || errorMessage) });
+  // Debug logging (only in development and when there's an error)
+  if (process.env.NODE_ENV === 'development' && (error || errorMessage)) {
+    console.log('[page] render state:', { error, errorMessage, hasError: !!(error || errorMessage) });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -149,18 +157,30 @@ export default function HomePage() {
 
           {/* Right Column - Stats and Activity */}
           <div className="space-y-6">
-            <QuickStats recent={recent} statuses={statuses} />
+            <QuickStats analyses={analyses} isLoading={isLoading} />
           </div>
         </div>
 
         {/* Analyses Table */}
-        {recent.length > 0 && (
+        {analyses.length > 0 && !isLoading && (
           <div className="mt-8 sm:mt-12">
+            {/* Header */}
+            <div className="mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">Your Job Analyses</h2>
+                  <p className="text-sm sm:text-base text-neutral-600 mt-1">Track your career opportunities and match scores</p>
+                </div>
+                <div className="text-sm text-neutral-500">
+                  {analyses.length} of {analyses.length} analyses
+                </div>
+              </div>
+            </div>
+
             <AnalysesTable
-              analyses={recent}
-              statuses={statuses}
-              onStatusToggle={handleStatusToggle}
-              onDelete={handleDelete}
+              analyses={analyses}
+              onStatusToggle={updateAnalysisStatus}
+              onDelete={deleteAnalysis}
             />
           </div>
         )}

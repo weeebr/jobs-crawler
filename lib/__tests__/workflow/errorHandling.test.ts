@@ -1,13 +1,13 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { 
-  setupDefaultMocks, 
-  mockCvProfile, 
+import {
+  setupDefaultMocks,
+  mockCvProfile,
   createMockJob,
   fetchJobAdMock,
   parseJobAdMock,
   compareCvMock,
   rankMatchScoreMock,
-  saveAnalysisMock,
+  analysisStorageMock,
   collectJobLinksMock
 } from "./testUtils";
 
@@ -45,7 +45,7 @@ async function testTwoStageWorkflow(
         heuristics: comparison
       });
       
-      const record = saveAnalysisMock({
+      const record = analysisStorageMock.save({
         id: Math.floor(Math.random() * 1000),
         job,
         cv: cvProfile,

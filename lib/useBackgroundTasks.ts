@@ -5,6 +5,7 @@ import type { AnalysisRecord } from "./types";
 import { createStreamMessageHandler } from "./streamHandlers";
 import { createTaskOperations, type ClearAllTasksOptions } from "./taskOperations";
 import { requireTaskResponse } from "./contractValidation";
+import { cancelAllActiveTasks } from "./backgroundTasks";
 
 export interface BackgroundTask {
   id: string;
@@ -67,6 +68,14 @@ export function useBackgroundTasks(options?: UseBackgroundTasksOptions): UseBack
     return () => {
       if (streamRef.current) {
         streamRef.current.close();
+        streamRef.current = null;
+      }
+
+      // Cancel any active tasks when component unmounts
+      const activeTaskCount = tasks.filter(task => task.status === 'running').length;
+      if (activeTaskCount > 0) {
+        console.info(`[useBackgroundTasks] cancelling ${activeTaskCount} tasks on component unmount...`);
+        cancelAllActiveTasks();
       }
     };
   }, [loadTasks]);

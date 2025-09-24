@@ -4,7 +4,7 @@ import { extractJobLinks } from "@/lib/extractJobLinks";
 import { parseJobAd } from "@/lib/parseJobAd";
 import { compareCv } from "@/lib/compareCv";
 import { rankMatchScore } from "@/lib/rankMatch";
-import { saveAnalysis } from "@/lib/analysisStore";
+import { analysisStorage } from "@/lib/analysisStorageHandler";
 import { collectJobLinks } from "@/lib/streaming/jobLinkCollector";
 import type { CVProfile } from "@/lib/schemas";
 
@@ -22,7 +22,18 @@ export const extractJobLinksMock = vi.mocked(extractJobLinks);
 export const parseJobAdMock = vi.mocked(parseJobAd);
 export const compareCvMock = vi.mocked(compareCv);
 export const rankMatchScoreMock = vi.mocked(rankMatchScore);
-export const saveAnalysisMock = vi.mocked(saveAnalysis);
+export const analysisStorageMock = vi.mocked(analysisStorage);
+
+// Mock the analysisStorage.save method specifically
+vi.mock("@/lib/analysisStorageHandler", () => ({
+  analysisStorage: {
+    save: vi.fn(),
+    get: vi.fn(),
+    list: vi.fn(),
+    remove: vi.fn(),
+    clear: vi.fn()
+  }
+}));
 export const collectJobLinksMock = vi.mocked(collectJobLinks);
 
 export const mockCvProfile: CVProfile = {
@@ -88,7 +99,7 @@ export function setupDefaultMocks() {
   });
 
   // Mock successful analysis saving
-  saveAnalysisMock.mockReturnValue(
+  analysisStorageMock.save.mockReturnValue(
     createMockAnalysis(123, createMockJob("Test Job", "Test Company"), mockCvProfile)
   );
 

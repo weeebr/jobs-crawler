@@ -25,6 +25,7 @@ export {
   loadRecentSummaries,
   persistRecentSummaries,
   toSummary,
+  rebuildRecentSummaries,
 } from "./recentSummaries";
 
 // Re-export analysis status

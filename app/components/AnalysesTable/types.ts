@@ -1,10 +1,9 @@
-import type { AnalysisStatus, RecentAnalysisSummary } from "@/lib/clientStorage";
+import type { AnalysisRecord } from "@/lib/types";
 
 export interface AnalysesTableProps {
-  analyses: RecentAnalysisSummary[];
-  statuses: Record<number, AnalysisStatus>;
-  onStatusToggle: (id: number, status: AnalysisStatus) => void;
-  onDelete: (id: number) => Promise<void>;
+  analyses: AnalysisRecord[];
+  onStatusToggle: (id: number, status: 'interested' | 'applied') => Promise<boolean>;
+  onDelete: (id: number) => Promise<boolean>;
 }
 
 export interface DynamicOptions {
@@ -21,7 +20,7 @@ export const SCORE_FILTERS = [
   { label: "60+", value: "60" },
 ];
 
-export const STATUS_FILTERS: Array<{ label: string; value: "all" | AnalysisStatus }> = [
+export const STATUS_FILTERS: Array<{ label: string; value: "all" | "interested" | "applied" }> = [
   { label: "All statuses", value: "all" },
   { label: "Interested", value: "interested" },
   { label: "Applied", value: "applied" },

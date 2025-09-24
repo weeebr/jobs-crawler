@@ -1,4 +1,4 @@
-import type { LetterLanguage } from "@/lib/generateMotivationLetter";
+import type { LetterLanguage } from "@/lib/letterHelpers";
 import type { ReactNode } from "react";
 
 import type { LetterSource } from "../hooks/useLetterManager";

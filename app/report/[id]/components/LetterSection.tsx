@@ -1,4 +1,4 @@
-import type { LetterLanguage } from "@/lib/generateMotivationLetter";
+import type { LetterLanguage } from "@/lib/letterHelpers";
 
 import type { LetterView } from "../hooks/useLetterManager";
 import { languageLabel, letterSourceLabel } from "./helpers";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponseSchema, type ApiErrorResponse } from "./schemas";
+import { z } from "zod";
 
 /**
  * Centralized error response creation for API routes
@@ -27,11 +28,13 @@ export function createApiErrorResponse(
  * Centralized validation error response
  */
 export function createValidationErrorResponse(
-  error: any,
+  error: unknown,
   context?: string
 ): NextResponse<ApiErrorResponse> {
   const message = "Invalid request";
-  const details = error?.flatten?.() || error;
+  const details = (error && typeof error === 'object' && 'flatten' in error && typeof error.flatten === 'function')
+    ? error.flatten()
+    : error;
   
   if (context) {
     console.error(`[${context}] validation failed:`, details);
@@ -68,7 +71,7 @@ export function extractErrorMessage(error: unknown): string {
 /**
  * Centralized error logging with context
  */
-export function logError(error: unknown, context: string, additionalInfo?: Record<string, any>): void {
+export function logError(error: unknown, context: string, additionalInfo?: Record<string, unknown>): void {
   const message = extractErrorMessage(error);
   const errorType = error instanceof Error ? error.constructor.name : 'Unknown';
   

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1758694217322,
+      "tag": "0000_adorable_killer_shrike",
+      "breakpoints": true
+    }
+  ]
+}

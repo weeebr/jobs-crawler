@@ -46,7 +46,7 @@ export async function processJobSearchStream(
 
       request.signal.addEventListener('abort', abortHandler);
 
-      const sendMessage = (type: string, data: any) => {
+      const sendMessage = (type: string, data: unknown) => {
         if (isClosed) return;
         try {
           const message = createSSEMessage(type, data);
@@ -124,7 +124,15 @@ export async function processJobSearchStream(
         }
 
         if (jobLinks.length === 0) {
-          sendMessage('error', { message: 'No job detail links found on search page' });
+          console.info('[api/analyze/stream] No job links found on search page - completing with empty results');
+          sendMessage('complete', {
+            records: [],
+            errors: [],
+            total: 0,
+            successful: 0,
+            failed: 0,
+            message: 'No job listings found on the search page. Try a different search URL or check if the page structure has changed.'
+          });
           closeStream();
           return;
         }
